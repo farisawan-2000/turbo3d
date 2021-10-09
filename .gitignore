@@ -2,6 +2,10 @@
 scratch_space/*
 t3d.bin
 tools/armips
+ucode.cp.ld
+build/*
+dump/*
+
 
 
 

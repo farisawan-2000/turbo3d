@@ -45,7 +45,12 @@ SECTIONS
 
     /* header and boot */
     BEGIN_SEG(boot, 0x04001000) {
+#ifdef TEXT
         *(.text);
+#endif
+#ifdef DATA
+        *(.data);
+#endif
     }
     END_SEG(boot)
 

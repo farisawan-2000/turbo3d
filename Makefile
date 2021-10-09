@@ -15,5 +15,15 @@ build/t3d.bin: turbo3d.s tools/armips
 	tools/armips -strequ CODE_FILE $@ -strequ DATA_FILE build/t3d.data.bin -temp scratch_space/.t3d  $<
 
 
+dump_binary:
+	mkdir -p dump
+	cpp -P ucode.ld -o build/ucode.cp.ld -DTEXT
+	mips-linux-gnu-ld -o dump/text.elf -Tbuild/ucode.cp.ld /usr/lib/n64/PR/gspTurbo3D.fifo.o
+	mips-linux-gnu-objcopy dump/text.elf dump/text.bin -O binary
+	cpp -P ucode.ld -o build/ucode.cp.ld -DDATA
+	mips-linux-gnu-ld -o dump/data.elf -Tbuild/ucode.cp.ld /usr/lib/n64/PR/gspTurbo3D.fifo.o
+	mips-linux-gnu-objcopy dump/data.elf dump/data.bin -O binary
+
+
 clean: build/t3d.bin
 	rm tools/armips build/ -r
