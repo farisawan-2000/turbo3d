@@ -25,7 +25,7 @@ data_50: ; some sort of OSTask reference
 output_buff_ptr equ 0x18
 .word  0x00000000
 output_buff_size equ 0x1C
-.word  0x00000000\
+.word  0x00000000
 
 .word  0x00000000, 0x00000000, 0xffff0000, 0x00000000
 .area 0xA8 - ., 0
