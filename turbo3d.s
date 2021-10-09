@@ -1,20 +1,55 @@
 .rsp
+
+.create DATA_FILE, 0
+; .word  0x00000001, 0x0002FFFF, 0x7FFF0004, 0xFFFC0200
+; .word  0x7ffffff8, 0x000800fd, 0x00208000, 0x01cccccc
+; .word  0x0001ffff, 0x00010001, 0x0001ffff, 0x00010001
+; .word  0x00020002, 0x00020002, 0x00020002, 0x00020002
+dmem_qvector_00 equ 0x00
+.dh    0, 1, 2, -1, 16384, 4, -4, 512
+dmem_qvector_10 equ 0x10
+.dh    32767, -8, 8, 0xFD, 0x20, 0x8000, 0x01CC, 0xCCCC
+dmem_qvector_20 equ 0x20
+.dh    1, -1, 1, 1, 1, -1, 1, 1
+dmem_qvector_30 equ 0x30
+.dh    2, 2, 2, 2, 2, 2, 2, 2
+dmem_dvector_40 equ 0x40
+.word  0x0ffaf006, 0x7fff0000
+dmem_dvector_48 equ 0x48
+.word  0x00ffffff, 0x11140000
+
+data_50: ; some sort of OSTask reference
+.word  0x00000000, 0x00000000, 0x00000000, 0x00000000
+.word  0x00000000, 0x00000000
+output_buff_ptr equ 0x18
+.word  0x00000000
+output_buff_size equ 0x1C
+.word  0x00000000\
+
+.word  0x00000000, 0x00000000, 0xffff0000, 0x00000000
+
+.area 0xBC0 - ., 0
+    ; scratch space?
+.endarea
+
+.close
+
 .create CODE_FILE, 0x04001080
 
-
-/* [04001080 / 000] 201d0050 */ addi r29, r0, 0x50
+OSTask equ r1
+/* [04001080 / 000] 201d0050 */ addi r29, r0, data_50
 /* [04001084 / 004] 34022800 */ ori r2, r0, 0x2800
 /* [04001088 / 008] 40822000 */ mtc0 r2, sp_status
-/* [0400108c / 00c] 8c220028 */ lw r2, 0x28(r1)
-/* [04001090 / 010] 8c23002c */ lw r3, 0x2c(r1)
-/* [04001094 / 014] afa00004 */ sw r0, 0x4(r29)
+/* [0400108c / 00c] 8c220028 */ lw r2, 0x28(OSTask) ; task.t.output_buff
+/* [04001090 / 010] 8c23002c */ lw r3, 0x2c(OSTask) ; task.t.output_buff_size
+/* [04001094 / 014] afa00004 */ sw r0, 0x4 (r29)
 /* [04001098 / 018] afa30010 */ sw r3, 0x10(r29)
-/* [0400109c / 01c] c81f2000 */ lqv $v31[0], 0x0(r0)
-/* [040010a0 / 020] c81e2001 */ lqv $v30[0], 0x10(r0)
-/* [040010a4 / 024] 8c370028 */ lw r23, 0x28(r1)
-/* [040010a8 / 028] 8c23002c */ lw r3, 0x2c(r1)
+/* [0400109c / 01c] c81f2000 */ lqv $v31[0], dmem_qvector_00(r0)
+/* [040010a0 / 020] c81e2001 */ lqv $v30[0], dmem_qvector_10(r0)
+/* [040010a4 / 024] 8c370028 */ lw r23, 0x28(OSTask) ; task.t.output_buff
+/* [040010a8 / 028] 8c23002c */ lw  r3, 0x2c(OSTask) ; task.t.output_buff_size
 /* [040010ac / 02c] afb70018 */ sw r23, 0x18(r29)
-/* [040010b0 / 030] afa3001c */ sw r3, 0x1c(r29)
+/* [040010b0 / 030] afa3001c */ sw  r3, 0x1c(r29)
 /* [040010b4 / 034] 40045800 */ mfc0 r4, dpc_status
 /* [040010b8 / 038] 30840001 */ andi r4, r4, 0x1
 /* [040010bc / 03c] 1480000a */ bnez r4, @@f
@@ -366,7 +401,7 @@ turbo3d_04001500:
 /* [04001570 / 4f0] c8851c05 */ ldv $v5[8], 0x28(r4)
 /* [04001574 / 4f4] c8861c06 */ ldv $v6[8], 0x30(r4)
 /* [04001578 / 4f8] c8871c07 */ ldv $v7[8], 0x38(r4)
-/* [0400157c / 4fc] c81d2002 */ lqv $v29[0], 0x20(r0)
+/* [0400157c / 4fc] c81d2002 */ lqv $v29[0], dmem_qvector_20(r0)
 /* [04001580 / 500] 200400c8 */ addi r4, r0, 0xc8
 /* [04001584 / 504] c8891800 */ ldv $v9[0], 0x0(r4)
 /* [04001588 / 508] c88a1801 */ ldv $v10[0], 0x8(r4)
@@ -424,9 +459,9 @@ turbo3d_04001500:
 /* [04001650 / 5d0] 4af9b60e */ vmadn $v24, $v22, $v25[3h]
 /* [04001654 / 5d4] 4af9adcf */ vmadh $v23, $v21, $v25[3h]
 /* [04001658 / 5d8] 4b087bc4 */ vmudl $v15, $v15, $v8[0]
-/* [0400165c / 5dc] c80c1808 */ ldv $v12[0], 0x40(r0)
+/* [0400165c / 5dc] c80c1808 */ ldv $v12[0], dmem_dvector_40(r0)
 /* [04001660 / 5e0] 4b08738d */ vmadm $v14, $v14, $v8[0]
-/* [04001664 / 5e4] c80c1c08 */ ldv $v12[8], 0x40(r0)
+/* [04001664 / 5e4] c80c1c08 */ ldv $v12[8], dmem_dvector_40(r0)
 /* [04001668 / 5e8] 4b1ffbce */ vmadn $v15, $v31, $v31[0]
 /* [0400166c / 5ec] 4b08c604 */ vmudl $v24, $v24, $v8[0]
 /* [04001670 / 5f0] 4b08bdcd */ vmadm $v23, $v23, $v8[0]
@@ -641,7 +676,7 @@ turbo3d_0400174c:
 /* [0400196c / 8ec] c8d10f02 */ lsv $v17[14], 0x4(r6)
 /* [04001970 / 8f0] 4b1ffe8e */ vmadn $v26, $v31, $v31[0]
 /* [04001974 / 8f4] 4b1e7473 */ vmov $v17[6], $v30[0]
-/* [04001978 / 8f8] c8172003 */ lqv $v23[0], 0x30(r0)
+/* [04001978 / 8f8] c8172003 */ lqv $v23[0], dmem_qvector_30(r0)
 /* [0400197c / 8fc] 4a1ffdac */ vxor $v22, $v31, $v31
 /* [04001980 / 900] 4a1cd604 */ vmudl $v24, $v26, $v28
 /* [04001984 / 904] 4a1cde0d */ vmadm $v24, $v27, $v28
