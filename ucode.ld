@@ -44,7 +44,7 @@ SECTIONS
     __romPos = 0x0;
 
     /* header and boot */
-    BEGIN_SEG(boot, 0x04001080) {
+    BEGIN_SEG(boot, 0x04001000) {
         *(.text);
     }
     END_SEG(boot)
