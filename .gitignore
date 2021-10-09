@@ -1,6 +1,7 @@
 *.o
 scratch_space/*
 t3d.bin
+tools/armips
 
 
 
