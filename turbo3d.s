@@ -5,21 +5,31 @@
 ; .word  0x7ffffff8, 0x000800fd, 0x00208000, 0x01cccccc
 ; .word  0x0001ffff, 0x00010001, 0x0001ffff, 0x00010001
 ; .word  0x00020002, 0x00020002, 0x00020002, 0x00020002
-dmem_qvector_00 equ 0x00
+dmem_00:
 .dh    0, 1, 2, -1, 16384, 4, -4, 512
-dmem_qvector_10 equ 0x10
-.dh    32767, -8, 8, 0xFD, 0x20, 0x8000, 0x01CC, 0xCCCC
-dmem_qvector_20 equ 0x20
-.dh    1, -1, 1, 1, 1, -1, 1, 1
-dmem_qvector_30 equ 0x30
-.dh    2, 2, 2, 2, 2, 2, 2, 2
-dmem_dvector_40 equ 0x40
-.word  0x0ffaf006, 0x7fff0000
-dmem_dvector_48 equ 0x48
-.word  0x00ffffff, 0x11140000
+dmem_qvector_00 equ lo(dmem_00)
 
-dmem_50 equ 0x50
-data_50: ; some sort of OSTask reference
+dmem_10:
+.dh    32767, -8, 8, 0xFD, 0x20, 0x8000, 0x01CC, 0xCCCC
+dmem_qvector_10 equ lo(dmem_10)
+
+dmem_20:
+.dh    1, -1, 1, 1, 1, -1, 1, 1
+dmem_qvector_20 equ lo(dmem_20)
+
+dmem_30:
+.dh    2, 2, 2, 2, 2, 2, 2, 2
+dmem_qvector_30 equ lo(dmem_30)
+
+dmem_40:
+.word  0x0ffaf006, 0x7fff0000
+dmem_dvector_40 equ lo(dmem_40)
+
+dmem_48:
+.word  0x00ffffff, 0x11140000
+dmem_dvector_48 equ lo(dmem_48)
+
+dmem_50: ; some sort of OSTask reference
 .word  0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word  0x00000000, 0x00000000
 output_buff_ptr equ 0x18
@@ -31,7 +41,16 @@ output_buff_size equ 0x1C
 .area 0xA8 - ., 0
     ; the rest of data_50
 .endarea
+data_50 equ lo(dmem_50)
 
+.area 0xF8 - ., 0
+
+.endarea
+
+dmem_matrix_F8:
+.area 0x40, 0
+    ; some matrix
+.endarea
 
 .area 0xBC0 - ., 0
     ; scratch space?
