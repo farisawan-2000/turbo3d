@@ -43,13 +43,28 @@ output_buff_size equ 0x1C
 .endarea
 data_50 equ lo(dmem_50)
 
-.area 0xF8 - ., 0
+.area 0xE0 - ., 0
 
 .endarea
 
-dmem_matrix_F8:
+dmem_E0:
+    .word 0, 0, 0, 0, 0, 0
+dmem_gtState equ lo(dmem_E0)
+
+dmem_F8:
 .area 0x40, 0
-    ; some matrix
+    ; gtlistp->transform
+.endarea
+dmem_gtStateMtx equ lo(dmem_F8)
+
+
+.area 0x640 - ., 0
+    ; fil
+.endarea
+
+dmem_640:
+.area 0xF0
+    ; turbo3d_04001260 dma's to here
 .endarea
 
 .area 0xBC0 - ., 0
@@ -60,8 +75,21 @@ dmem_matrix_F8:
 
 .create CODE_FILE, 0x04001080
 
+; DEFINES (move to new file?)
+TRUE equ 1
+FALSE equ 0
 OSTask equ r1
 dmem_50_reg equ r29
+DMA_TYPE equ r17
+DMA_ISWRITE equ r17
+    dma_READ equ 0
+    dma_WRITE equ 1
+DMA_LEN equ r18
+DMA_SRC equ r19
+DMA_DEST equ r20
+
+
+
 /* [04001080 / 000] 201d0050 */ addi dmem_50_reg, r0, data_50
 /* [04001084 / 004] 34022800 */ ori r2, r0, 0x2800
 /* [04001088 / 008] 40822000 */ mtc0 r2, sp_status
@@ -101,7 +129,7 @@ dmem_50_reg equ r29
 /* [04001104 / 084] afa30004 */ sw r3, 0x4(dmem_50_reg)
 /* [04001108 / 088] 201707b0 */ addi r23, r0, 0x7b0
 /* [0400110c / 08c] 0d000498 */ jal turbo3d_04001260
-/* [04001110 / 090] 8c3a0030 */ lw r26, 0x30(r1)
+/* [04001110 / 090] 8c3a0030 */ lw r26, 0x30(OSTask) ; data_ptr
 /* [04001114 / 094] 0d0004b6 */ jal turbo3d_040012d8
 /* [04001118 / 098] 00000000 */ nop
 /* [0400111c / 09c] 201b0640 */ addi r27, r0, 0x640
@@ -118,7 +146,7 @@ dmem_50_reg equ r29
 /* [04001144 / 0c4] 0d0004a1 */ jal turbo3d_04001284
 /* [04001148 / 0c8] 20140078 */ addi r20, r0, 0x78
 /* [0400114c / 0cc] 20120063 */ addi r18, r0, 0x63
-/* [04001150 / 0d0] 0d0004a9 */ jal turbo3d_040012a4
+/* [04001150 / 0d0] 0d0004a9 */ jal dma_read_write
 /* [04001154 / 0d4] 20110000 */ addi r17, r0, 0x0
 /* [04001158 / 0d8] 0d0004b6 */ jal turbo3d_040012d8
 /* [0400115c / 0dc] 00000000 */ nop
@@ -128,10 +156,11 @@ dmem_50_reg equ r29
 /* [04001168 / 0e8] 13200036 */ beqz r25, @lab_04001244
 /* [0400116c / 0ec] 00199820 */ add r19, r0, r25
 /* [04001170 / 0f0] 0d0004a1 */ jal turbo3d_04001284
-/* [04001174 / 0f4] 201400e0 */ addi r20, r0, 0xe0
-/* [04001178 / 0f8] 20120017 */ addi r18, r0, 0x17
-/* [0400117c / 0fc] 0d0004a9 */ jal turbo3d_040012a4
-/* [04001180 / 100] 20110000 */ addi r17, r0, 0x0
+; read in the non-mtx part of the current gtState
+/* [04001174 / 0f4] 201400e0 */ addi DMA_DEST, r0, dmem_gtState
+/* [04001178 / 0f8] 20120017 */ addi DMA_LEN, r0, 0x18 - 1
+/* [0400117c / 0fc] 0d0004a9 */ jal dma_read_write
+/* [04001180 / 100] 20110000 */ addi DMA_ISWRITE, r0, FALSE
 /* [04001184 / 104] 0d0004b6 */ jal turbo3d_040012d8
 /* [04001188 / 108] 00000000 */ nop
 /* [0400118c / 10c] 1300000b */ beqz r24, @@f4
@@ -144,7 +173,7 @@ dmem_50_reg equ r29
 /* [040011a8 / 128] 0286a020 */ add r20, r20, r6
 /* [040011ac / 12c] 00052900 */ sll r5, r5, 4
 /* [040011b0 / 130] 20b2ffff */ addi r18, r5, -1
-/* [040011b4 / 134] 0d0004a9 */ jal turbo3d_040012a4
+/* [040011b4 / 134] 0d0004a9 */ jal dma_read_write
 /* [040011b8 / 138] 20110000 */ addi r17, r0, 0x0
 @@f4:
 /* [040011bc / 13c] 0d000528 */ jal turbo3d_040014a0
@@ -162,7 +191,7 @@ dmem_50_reg equ r29
 /* [040011ec / 16c] 00052880 */ sll r5, r5, 2
 /* [040011f0 / 170] 20b2ffff */ addi r18, r5, -1
 /* [040011f4 / 174] 83a5009b */ lb r5, 0x9b(dmem_50_reg)
-/* [040011f8 / 178] 0d0004a9 */ jal turbo3d_040012a4
+/* [040011f8 / 178] 0d0004a9 */ jal dma_read_write
 /* [040011fc / 17c] 20110000 */ addi r17, r0, 0x0
 @@f5:
 /* [04001200 / 180] 30a50002 */ andi r5, r5, 0x2
@@ -198,11 +227,11 @@ dmem_50_reg equ r29
 turbo3d_04001260:
 /* [04001260 / 1e0] 201c00f0 */ addi r28, r0, 0xf0
 /* [04001264 / 1e4] 001fa820 */ add r21, r0, ra
-/* [04001268 / 1e8] 20140640 */ addi r20, r0, 0x640
-/* [0400126c / 1ec] 001a9820 */ add r19, r0, r26
-/* [04001270 / 1f0] 201200ef */ addi r18, r0, 0xef
-/* [04001274 / 1f4] 0d0004a9 */ jal turbo3d_040012a4
-/* [04001278 / 1f8] 20110000 */ addi r17, r0, 0x0
+/* [04001268 / 1e8] 20140640 */ addi DMA_DEST, r0, dmem_640
+/* [0400126c / 1ec] 001a9820 */ add DMA_SRC, r0, r26
+/* [04001270 / 1f0] 201200ef */ addi DMA_LEN, r0, 0xF0 - 1
+/* [04001274 / 1f4] 0d0004a9 */ jal dma_read_write
+/* [04001278 / 1f8] 20110000 */ addi DMA_ISWRITE, r0, FALSE
 /* [0400127c / 1fc] 02a00008 */ jr r21
 /* [04001280 / 200] 201b0640 */ addi r27, r0, 0x640
 
@@ -216,23 +245,29 @@ turbo3d_04001284:
 /* [0400129c / 21c] 03e00008 */ jr ra
 /* [040012a0 / 220] 026c9820 */ add r19, r19, r12
 
-turbo3d_040012a4:
+; args:
+;  r17: 0 if read, 1 if write
+;  r18: len
+;  r19: src
+;  r20: dest
+dma_read_write:
+@@b: ; wait for semaphore to be freed
 /* [040012a4 / 224] 400b3800 */ mfc0 r11, sp_semaphore
-/* [040012a8 / 228] 1560fffe */ bnez r11, turbo3d_040012a4
-@@b:
-/* [040012ac / 22c] 400b2800 */ mfc0 r11, sp_dma_full
-/* [040012b0 / 230] 1560fffe */ bnez r11, @@b
-/* [040012b4 / 234] 00000000 */ nop
-/* [040012b8 / 238] 40940000 */ mtc0 r20, sp_mem_addr
-/* [040012bc / 23c] 1e200003 */ bgtz r17, @@f
-/* [040012c0 / 240] 40930800 */ mtc0 r19, sp_dram_addr
+/* [040012a8 / 228] 1560fffe */ bnez r11, @@b
+@@b2:
+/* [040012ac / 22c] 400b2800 */  mfc0 r11, sp_dma_full
+/* [040012b0 / 230] 1560fffe */ bnez r11, @@b2
+/* [040012b4 / 234] 00000000 */  nop
+/* [040012b8 / 238] 40940000 */ mtc0 DMA_DEST, sp_mem_addr
+/* [040012bc / 23c] 1e200003 */ bgtz DMA_TYPE, @@writeIt
+/* [040012c0 / 240] 40930800 */  mtc0 DMA_SRC, sp_dram_addr
 /* [040012c4 / 244] 090004b4 */ j @@f2
-/* [040012c8 / 248] 40921000 */ mtc0 r18, sp_rd_len
-@@f:
-/* [040012cc / 24c] 40921800 */ mtc0 r18, sp_wr_len
+/* [040012c8 / 248] 40921000 */  mtc0 DMA_LEN, sp_rd_len
+@@writeIt:
+/* [040012cc / 24c] 40921800 */ mtc0 DMA_LEN, sp_wr_len
 @@f2:
 /* [040012d0 / 250] 03e00008 */ jr ra
-/* [040012d4 / 254] 40803800 */ mtc0 r0, sp_semaphore
+/* [040012d4 / 254] 40803800 */  mtc0 r0, sp_semaphore ; release the semaphore
 
 turbo3d_040012d8:
 /* [040012d8 / 258] 400b3800 */ mfc0 r11, sp_semaphore
@@ -249,11 +284,11 @@ turbo3d_040012d8:
 /* [040012fc / 27c] ac1b0738 */ sw r27, 0x738(r0)
 /* [04001300 / 280] ac1a073c */ sw r26, 0x73c(r0)
 /* [04001304 / 284] ac170740 */ sw r23, 0x740(r0)
-/* [04001308 / 288] 8c130050 */ lw r19, 0x50(r0)
-/* [0400130c / 28c] 34140000 */ ori r20, r0, 0x0
-/* [04001310 / 290] 3412065f */ ori r18, r0, 0x65f
-/* [04001314 / 294] 0d0004a9 */ jal turbo3d_040012a4
-/* [04001318 / 298] 34110001 */ ori r17, r0, 0x1
+/* [04001308 / 288] 8c130050 */ lw  DMA_SRC, 0x50(r0)
+/* [0400130c / 28c] 34140000 */ ori DMA_DEST, r0, 0x0
+/* [04001310 / 290] 3412065f */ ori DMA_LEN, r0, 0x65f
+/* [04001314 / 294] 0d0004a9 */ jal dma_read_write
+/* [04001318 / 298] 34110001 */ ori DMA_ISWRITE, r0, TRUE
 /* [0400131c / 29c] 0d0004b6 */ jal turbo3d_040012d8
 /* [04001320 / 2a0] 00000000 */ nop
 /* [04001324 / 2a4] 09000491 */ j @lab_04001244
@@ -294,10 +329,10 @@ turbo3d_04001340:
 /* [04001398 / 318] 00000000 */ nop
 @@f2:
 /* [0400139c / 31c] 0272b820 */ add r23, r19, r18
-/* [040013a0 / 320] 2252ffff */ addi r18, r18, -1
-/* [040013a4 / 324] 201407b0 */ addi r20, r0, 0x7b0
-/* [040013a8 / 328] 0d0004a9 */ jal turbo3d_040012a4
-/* [040013ac / 32c] 20110001 */ addi r17, r0, 0x1
+/* [040013a0 / 320] 2252ffff */ addi DMA_LEN, -1
+/* [040013a4 / 324] 201407b0 */ addi DMA_DEST, r0, 0x7B0
+/* [040013a8 / 328] 0d0004a9 */ jal dma_read_write
+/* [040013ac / 32c] 20110001 */ addi DMA_ISWRITE, r0, TRUE
 /* [040013b0 / 330] 0d0004b6 */ jal turbo3d_040012d8
 /* [040013b4 / 334] afb70004 */ sw r23, 0x4(dmem_50_reg)
 /* [040013b8 / 338] 40974800 */ mtc0 r23, dpc_end
@@ -321,7 +356,7 @@ turbo3d_040013c4:
 /* [040013f0 / 370] 200107a0 */ addi r1, r0, 0x7a0
 /* [040013f4 / 374] 20140730 */ addi r20, r0, 0x730
 /* [040013f8 / 378] 20120077 */ addi r18, r0, 0x77
-/* [040013fc / 37c] 0d0004a9 */ jal turbo3d_040012a4
+/* [040013fc / 37c] 0d0004a9 */ jal dma_read_write
 /* [04001400 / 380] 20110000 */ addi r17, r0, 0x0
 /* [04001404 / 384] 0d0004b6 */ jal turbo3d_040012d8
 /* [04001408 / 388] 00000000 */ nop
@@ -374,11 +409,11 @@ turbo3d_040014a0:
 /* [040014ac / 42c] 1ce00009 */ bgtz r7, @@f
 /* [040014b0 / 430] 00199820 */ add r19, r0, r25
 /* [040014b4 / 434] 0d0004a1 */ jal turbo3d_04001284
-/* [040014b8 / 438] 22730018 */ addi r19, r19, 0x18
-/* [040014bc / 43c] 201400f8 */ addi r20, r0, 0xf8
-/* [040014c0 / 440] 2012003f */ addi r18, r0, 0x3f
-/* [040014c4 / 444] 0d0004a9 */ jal turbo3d_040012a4
-/* [040014c8 / 448] 20110000 */ addi r17, r0, 0x0
+/* [040014b8 / 438] 22730018 */  addi DMA_SRC, 0x18
+/* [040014bc / 43c] 201400f8 */ addi DMA_DEST, r0, dmem_gtStateMtx
+/* [040014c0 / 440] 2012003f */ addi DMA_LEN, r0, 0x40 - 1
+/* [040014c4 / 444] 0d0004a9 */ jal dma_read_write
+/* [040014c8 / 448] 20110000 */ addi DMA_ISWRITE, r0, FALSE
 /* [040014cc / 44c] 0d0004b6 */ jal turbo3d_040012d8
 /* [040014d0 / 450] 00000000 */ nop
 @@f:
@@ -540,9 +575,9 @@ turbo3d_04001500:
 /* [04001728 / 6a8] 0d0004a1 */ jal turbo3d_04001284
 /* [0400172c / 6ac] 20140016 */ addi r20, r0, 0x16
 /* [04001730 / 6b0] 00010900 */ sll r1, r1, 4
-/* [04001734 / 6b4] 2032ffff */ addi r18, r1, -1
-/* [04001738 / 6b8] 0d0004a9 */ jal turbo3d_040012a4
-/* [0400173c / 6bc] 20110001 */ addi r17, r0, 0x1
+/* [04001734 / 6b4] 2032ffff */ addi DMA_LEN, r1, -1
+/* [04001738 / 6b8] 0d0004a9 */ jal dma_read_write
+/* [0400173c / 6bc] 20110001 */ addi DMA_ISWRITE, r0, TRUE
 
 @@f2:
 /* [04001740 / 6c0] 8c1f0070 */ lw ra, 0x70(r0)
