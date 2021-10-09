@@ -9,6 +9,7 @@ tools/armips: tools/armips.cpp
 
 t3d.bin: turbo3d.s tools/armips
 	tools/armips -strequ CODE_FILE $@ -temp scratch_space/.t3d  $<
+	sha1sum -c t3d.sha1
 
 
 clean: t3d.bin
