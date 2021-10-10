@@ -48,8 +48,17 @@ data_50 equ lo(dmem_50)
 .endarea
 
 dmem_E0:
-    .word 0, 0, 0, 0, 0, 0
-dmem_gtState equ lo(dmem_E0)
+    .word 0, 0
+dmem_E8:
+    .byte 0, 0, 0, 0
+dmem_EC:
+    .word 0,0,0
+dmem_gtStateL equ lo(dmem_E0)
+dmem_gtStateL_renderState equ lo(dmem_E0 - dmem_50)
+dmem_gtStateL_vtxCount equ lo(dmem_E8 - dmem_50)
+dmem_gtStateL_vtxV0 equ lo(dmem_E8 + 1 - dmem_50)
+dmem_gtStateL_triCount equ lo(dmem_E8 + 2 - dmem_50)
+dmem_gtStateL_flag equ lo(dmem_E8 + 3 - dmem_50)
 
 dmem_F8:
 .area 0x40, 0
@@ -88,6 +97,10 @@ DMA_LEN equ r18
 DMA_SRC equ r19
 DMA_DEST equ r20
 
+GT_ZBUFFER equ 0x1
+GT_TEXTURE equ 0x2
+GT_SHADING_SMOOTH equ 0x200
+GT_CULL_BACK equ 0x2000
 
 
 /* [04001080 / 000] 201d0050 */ addi dmem_50_reg, r0, data_50
@@ -130,7 +143,7 @@ DMA_DEST equ r20
 /* [04001108 / 088] 201707b0 */ addi r23, r0, 0x7b0
 /* [0400110c / 08c] 0d000498 */ jal turbo3d_04001260
 /* [04001110 / 090] 8c3a0030 */ lw r26, 0x30(OSTask) ; data_ptr
-/* [04001114 / 094] 0d0004b6 */ jal turbo3d_040012d8
+/* [04001114 / 094] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001118 / 098] 00000000 */ nop
 /* [0400111c / 09c] 201b0640 */ addi r27, r0, 0x640
 @lab_04001120:
@@ -148,7 +161,7 @@ DMA_DEST equ r20
 /* [0400114c / 0cc] 20120063 */ addi r18, r0, 0x63
 /* [04001150 / 0d0] 0d0004a9 */ jal dma_read_write
 /* [04001154 / 0d4] 20110000 */ addi r17, r0, 0x0
-/* [04001158 / 0d8] 0d0004b6 */ jal turbo3d_040012d8
+/* [04001158 / 0d8] 0d0004b6 */ jal wait_for_dma_finish
 /* [0400115c / 0dc] 00000000 */ nop
 /* [04001160 / 0e0] 0d0004f1 */ jal turbo3d_040013c4
 /* [04001164 / 0e4] 00000000 */ nop
@@ -156,17 +169,17 @@ DMA_DEST equ r20
 /* [04001168 / 0e8] 13200036 */ beqz r25, @lab_04001244
 /* [0400116c / 0ec] 00199820 */ add r19, r0, r25
 /* [04001170 / 0f0] 0d0004a1 */ jal turbo3d_04001284
-; read in the non-mtx part of the current gtState
-/* [04001174 / 0f4] 201400e0 */ addi DMA_DEST, r0, dmem_gtState
+; read in the Lite part of the current gtState
+/* [04001174 / 0f4] 201400e0 */ addi DMA_DEST, r0, dmem_gtStateL
 /* [04001178 / 0f8] 20120017 */ addi DMA_LEN, r0, 0x18 - 1
 /* [0400117c / 0fc] 0d0004a9 */ jal dma_read_write
 /* [04001180 / 100] 20110000 */ addi DMA_ISWRITE, r0, FALSE
-/* [04001184 / 104] 0d0004b6 */ jal turbo3d_040012d8
+/* [04001184 / 104] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001188 / 108] 00000000 */ nop
 /* [0400118c / 10c] 1300000b */ beqz r24, @@f4
 /* [04001190 / 110] 00189820 */ add r19, r0, r24
-/* [04001194 / 114] 83a50098 */ lb r5, 0x98(dmem_50_reg)
-/* [04001198 / 118] 83a60099 */ lb r6, 0x99(dmem_50_reg)
+/* [04001194 / 114] 83a50098 */ lb r5, dmem_gtStateL_vtxCount(dmem_50_reg)
+/* [04001198 / 118] 83a60099 */ lb r6, dmem_gtStateL_vtxV0(dmem_50_reg)
 /* [0400119c / 11c] 0d0004a1 */ jal turbo3d_04001284
 /* [040011a0 / 120] 20140140 */ addi r20, r0, 0x140
 /* [040011a4 / 124] 00063100 */ sll r6, r6, 4
@@ -178,21 +191,21 @@ DMA_DEST equ r20
 @@f4:
 /* [040011bc / 13c] 0d000528 */ jal turbo3d_040014a0
 /* [040011c0 / 140] 00000000 */ nop
-/* [040011c4 / 144] 0d0004b6 */ jal turbo3d_040012d8
+/* [040011c4 / 144] 0d0004b6 */ jal wait_for_dma_finish
 /* [040011c8 / 148] 00000000 */ nop
-/* [040011cc / 14c] 83a5009b */ lb r5, 0x9b(dmem_50_reg)
+/* [040011cc / 14c] 83a5009b */ lb r5, dmem_gtStateL_flag(dmem_50_reg)
 /* [040011d0 / 150] 30a60004 */ andi r6, r5, 0x4
 /* [040011d4 / 154] 1cc0000a */ bgtz r6, @@f5
-/* [040011d8 / 158] 83a5009a */ lb r5, 0x9a(dmem_50_reg)
+/* [040011d8 / 158] 83a5009a */ lb r5, dmem_gtStateL_triCount(dmem_50_reg)
 /* [040011dc / 15c] 10a00008 */ beqz r5, @@f5
 /* [040011e0 / 160] 001e9820 */ add r19, r0, r30
-/* [040011e4 / 164] 0d0004a1 */ jal turbo3d_04001284
-/* [040011e8 / 168] 20140540 */ addi r20, r0, 0x540
-/* [040011ec / 16c] 00052880 */ sll r5, r5, 2
-/* [040011f0 / 170] 20b2ffff */ addi r18, r5, -1
-/* [040011f4 / 174] 83a5009b */ lb r5, 0x9b(dmem_50_reg)
-/* [040011f8 / 178] 0d0004a9 */ jal dma_read_write
-/* [040011fc / 17c] 20110000 */ addi r17, r0, 0x0
+/* [040011e4 / 164] 0d0004a1 */     jal turbo3d_04001284
+/* [040011e8 / 168] 20140540 */     addi r20, r0, 0x540
+/* [040011ec / 16c] 00052880 */     sll r5, r5, 2
+/* [040011f0 / 170] 20b2ffff */     addi r18, r5, -1
+/* [040011f4 / 174] 83a5009b */     lb r5, dmem_gtStateL_flag(dmem_50_reg)
+/* [040011f8 / 178] 0d0004a9 */     jal dma_read_write
+/* [040011fc / 17c] 20110000 */     addi r17, r0, 0x0
 @@f5:
 /* [04001200 / 180] 30a50002 */ andi r5, r5, 0x2
 /* [04001204 / 184] 1ca00003 */ bgtz r5, @@f6
@@ -200,7 +213,7 @@ DMA_DEST equ r20
 /* [0400120c / 18c] 0d000540 */ jal turbo3d_04001500
 /* [04001210 / 190] 00000000 */ nop
 @@f6:
-/* [04001214 / 194] 0d0004b6 */ jal turbo3d_040012d8
+/* [04001214 / 194] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001218 / 198] 00000000 */ nop
 /* [0400121c / 19c] 0d0005d3 */ jal turbo3d_0400174c
 /* [04001220 / 1a0] 00000000 */ nop
@@ -217,7 +230,7 @@ DMA_DEST equ r20
 
 @lab_04001244:
 /* [04001244 / 1c4] 00000000 */ nop
-/* [04001248 / 1c8] 0d0004b6 */ jal turbo3d_040012d8
+/* [04001248 / 1c8] 0d0004b6 */ jal wait_for_dma_finish
 /* [0400124c / 1cc] 34024000 */ ori r2, r0, 0x4000
 /* [04001250 / 1d0] 40822000 */ mtc0 r2, sp_status
 /* [04001254 / 1d4] 0000000d */ break 0
@@ -269,9 +282,9 @@ dma_read_write:
 /* [040012d0 / 250] 03e00008 */ jr ra
 /* [040012d4 / 254] 40803800 */  mtc0 r0, sp_semaphore ; release the semaphore
 
-turbo3d_040012d8:
+wait_for_dma_finish:
 /* [040012d8 / 258] 400b3800 */ mfc0 r11, sp_semaphore
-/* [040012dc / 25c] 1560fffe */ bnez r11, turbo3d_040012d8
+/* [040012dc / 25c] 1560fffe */ bnez r11, wait_for_dma_finish
 @@b:
 /* [040012e0 / 260] 400b3000 */ mfc0 r11, sp_dma_busy
 /* [040012e4 / 264] 1560fffe */ bnez r11, @@b
@@ -289,7 +302,7 @@ turbo3d_040012d8:
 /* [04001310 / 290] 3412065f */ ori DMA_LEN, r0, 0x65f
 /* [04001314 / 294] 0d0004a9 */ jal dma_read_write
 /* [04001318 / 298] 34110001 */ ori DMA_ISWRITE, r0, TRUE
-/* [0400131c / 29c] 0d0004b6 */ jal turbo3d_040012d8
+/* [0400131c / 29c] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001320 / 2a0] 00000000 */ nop
 /* [04001324 / 2a4] 09000491 */ j @lab_04001244
 /* [04001328 / 2a8] 40822000 */ mtc0 r2, sp_status
@@ -333,7 +346,7 @@ turbo3d_04001340:
 /* [040013a4 / 324] 201407b0 */ addi DMA_DEST, r0, 0x7B0
 /* [040013a8 / 328] 0d0004a9 */ jal dma_read_write
 /* [040013ac / 32c] 20110001 */ addi DMA_ISWRITE, r0, TRUE
-/* [040013b0 / 330] 0d0004b6 */ jal turbo3d_040012d8
+/* [040013b0 / 330] 0d0004b6 */ jal wait_for_dma_finish
 /* [040013b4 / 334] afb70004 */ sw r23, 0x4(dmem_50_reg)
 /* [040013b8 / 338] 40974800 */ mtc0 r23, dpc_end
 @@f3:
@@ -358,7 +371,7 @@ turbo3d_040013c4:
 /* [040013f8 / 378] 20120077 */ addi r18, r0, 0x77
 /* [040013fc / 37c] 0d0004a9 */ jal dma_read_write
 /* [04001400 / 380] 20110000 */ addi r17, r0, 0x0
-/* [04001404 / 384] 0d0004b6 */ jal turbo3d_040012d8
+/* [04001404 / 384] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001408 / 388] 00000000 */ nop
 @@b:
 /* [0400140c / 38c] 8e820000 */ lw r2, 0x0(r20)
@@ -414,7 +427,7 @@ turbo3d_040014a0:
 /* [040014c0 / 440] 2012003f */ addi DMA_LEN, r0, 0x40 - 1
 /* [040014c4 / 444] 0d0004a9 */ jal dma_read_write
 /* [040014c8 / 448] 20110000 */ addi DMA_ISWRITE, r0, FALSE
-/* [040014cc / 44c] 0d0004b6 */ jal turbo3d_040012d8
+/* [040014cc / 44c] 0d0004b6 */ jal wait_for_dma_finish
 /* [040014d0 / 450] 00000000 */ nop
 @@f:
 /* [040014d4 / 454] cba01814 */ ldv $v0[0], 0xa0(dmem_50_reg)
@@ -594,7 +607,7 @@ turbo3d_0400174c:
 /* [04001764 / 6e4] 00021080 */ sll r2, r2, 2
 /* [04001768 / 6e8] 10400016 */ beqz r2, @early_return
 /* [0400176c / 6ec] 00411020 */ add r2, r2, r1
-/* [04001770 / 6f0] 8fab0090 */ lw r11, 0x90(dmem_50_reg)
+/* [04001770 / 6f0] 8fab0090 */ lw r11, dmem_gtStateL_renderState(dmem_50_reg)
 
 @bigman_loop:
 /* [04001774 / 6f4] 1022000e */ beq r1, r2, @lab_040017b0
@@ -607,7 +620,7 @@ turbo3d_0400174c:
 /* [04001790 / 710] 20840140 */ addi r4, r4, 0x140
 /* [04001794 / 714] 20a50140 */ addi r5, r5, 0x140
 /* [04001798 / 718] 20c60140 */ addi r6, r6, 0x140
-/* [0400179c / 71c] 316a0200 */ andi r10, r11, 0x200
+/* [0400179c / 71c] 316a0200 */ andi r10, r11, GT_SHADING_SMOOTH
 /* [040017a0 / 720] 1140000a */ beqz r10, @lab_040017cc
 @lab_040017a4:
 /* [040017a4 / 724] 00000000 */ nop
@@ -634,7 +647,7 @@ turbo3d_0400174c:
 /* [040017e8 / 768] c8891000 */ llv $v9[0], 0x0(r4)
 /* [040017ec / 76c] c8aa1000 */ llv $v10[0], 0x0(r5)
 /* [040017f0 / 770] c8cb1000 */ llv $v11[0], 0x0(r6)
-/* [040017f4 / 774] 8fab0090 */ lw r11, 0x90(dmem_50_reg)
+/* [040017f4 / 774] 8fab0090 */ lw r11, dmem_gtStateL_renderState(dmem_50_reg)
 /* [040017f8 / 778] 4a095191 */ vsub $v6, $v10, $v9
 /* [040017fc / 77c] 4a095951 */ vsub $v5, $v11, $v9
 /* [04001800 / 780] 4a0a4a11 */ vsub $v8, $v9, $v10
@@ -647,7 +660,7 @@ turbo3d_0400174c:
 /* [0400181c / 79c] 84ce0002 */ lh r14, 0x2(r6)
 /* [04001820 / 7a0] 4b254307 */ vmudh $v12, $v8, $v5[1]
 /* [04001824 / 7a4] 4b30841d */ vsar $v16, $v16, $v16[1]
-/* [04001828 / 7a8] 316f2000 */ andi r15, r11, 0x2000
+/* [04001828 / 7a8] 316f2000 */ andi r15, r11, GT_CULL_BACK
 /* [0400182c / 7ac] 4b0f7bdd */ vsar $v15, $v15, $v15[0]
 @@b:
 /* [04001830 / 7b0] 01ac502a */ slt r10, r13, r12
@@ -696,7 +709,7 @@ turbo3d_0400174c:
 /* [040018d0 / 850] 4a1ffd2c */ vxor $v20, $v31, $v31
 /* [040018d4 / 854] 20aa0004 */ addi r10, r5, 0x4
 /* [040018d8 / 858] c9523801 */ luv $v18[0], 0x8(r10)
-/* [040018dc / 85c] 316a0200 */ andi r10, r11, 0x200
+/* [040018dc / 85c] 316a0200 */ andi r10, r11, GT_SHADING_SMOOTH
 /* [040018e0 / 860] 1d400004 */ bgtz r10, @@f4
 /* [040018e4 / 864] 20ea0004 */ addi r10, r7, 0x4
 /* [040018e8 / 868] c9513801 */ luv $v17[0], 0x8(r10)
@@ -867,8 +880,6 @@ turbo3d_0400174c:
 /* [04001b68 / ae8] 00000000 */ nop
 /* [04001b6c / aec] 090005dd */ j @bigman_loop
 /* [04001b70 / af0] 00000000 */ nop
-/* [04001b74 / af4] 00000000 */ nop
-/* [04001b78 / af8] 00000000 */ nop
-/* [04001b7c / afc] 00000000 */ nop
+.align 16
 .close
 
