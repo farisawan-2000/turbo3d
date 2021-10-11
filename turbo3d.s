@@ -26,8 +26,11 @@ dmem_40:
 dmem_dvector_40 equ lo(dmem_40)
 
 dmem_48:
-.word  0x00ffffff, 0x11140000
-dmem_dvector_48 equ lo(dmem_48)
+.word  0x00ffffff
+dmem_4C:
+.dh lo(dl_dma_wait)
+.align 4
+mask_segmented_addr equ lo(dmem_48)
 
 dmem_50: ; some sort of OSTask reference
 .word  0x00000000, 0x00000000, 0x00000000, 0x00000000
@@ -90,7 +93,7 @@ dmem_640:
 TRUE equ 1
 FALSE equ 0
 OSTask equ r1
-dmem_50_reg equ r29
+rsp_state equ r29
 DMA_TYPE equ r17
 DMA_ISWRITE equ r17
     dma_READ equ 0
@@ -107,19 +110,40 @@ GT_FLAG_NOMTX equ 0x01 ; don't load the matrix
 GT_FLAG_NO_XFM equ 0x02 ; load vtx, use verbatim
 GT_FLAG_XFM_ONLY equ 0x04 ; xform vtx, write to *TriN
 
-/* [04001080 / 000] 201d0050 */ addi dmem_50_reg, r0, data_50
+vtx_xyz equ 0
+vtx_flag equ 0x6
+
+; vreg names
+v_matrix0_i equ $v0
+v_matrix0_f equ $v4
+
+v_matrix1_i equ $v1
+v_matrix1_f equ $v5
+
+v_matrix2_i equ $v2
+v_matrix2_f equ $v6
+
+v_matrix3_i equ $v3
+v_matrix3_f equ $v7
+
+v_w_scale equ $v8
+v_viewport_scale equ $v9
+v_viewport_translation equ $v10
+
+entry:
+/* [04001080 / 000] 201d0050 */ addi rsp_state, r0, data_50
 /* [04001084 / 004] 34022800 */ ori r2, r0, 0x2800
 /* [04001088 / 008] 40822000 */ mtc0 r2, sp_status
 /* [0400108c / 00c] 8c220028 */ lw r2, 0x28(OSTask) ; task.t.output_buff
 /* [04001090 / 010] 8c23002c */ lw r3, 0x2c(OSTask) ; task.t.output_buff_size
-/* [04001094 / 014] afa00004 */ sw r0, 0x4 (dmem_50_reg)
-/* [04001098 / 018] afa30010 */ sw r3, 0x10(dmem_50_reg)
+/* [04001094 / 014] afa00004 */ sw r0, 0x4 (rsp_state)
+/* [04001098 / 018] afa30010 */ sw r3, 0x10(rsp_state)
 /* [0400109c / 01c] c81f2000 */ lqv $v31[0], dmem_qvector_00(r0)
 /* [040010a0 / 020] c81e2001 */ lqv $v30[0], dmem_qvector_10(r0)
 /* [040010a4 / 024] 8c370028 */ lw r23, 0x28(OSTask) ; task.t.output_buff
 /* [040010a8 / 028] 8c23002c */ lw  r3, 0x2c(OSTask) ; task.t.output_buff_size
-/* [040010ac / 02c] afb70018 */ sw r23, 0x18(dmem_50_reg)
-/* [040010b0 / 030] afa3001c */ sw  r3, 0x1c(dmem_50_reg)
+/* [040010ac / 02c] afb70018 */ sw r23, 0x18(rsp_state)
+/* [040010b0 / 030] afa3001c */ sw  r3, 0x1c(rsp_state)
 /* [040010b4 / 034] 40045800 */ mfc0 r4, dpc_status
 /* [040010b8 / 038] 30840001 */ andi r4, r4, 0x1
 /* [040010bc / 03c] 1480000a */ bnez r4, @@f
@@ -143,21 +167,23 @@ GT_FLAG_XFM_ONLY equ 0x04 ; xform vtx, write to *TriN
 /* [040010fc / 07c] 40834000 */ mtc0 r3, dpc_start
 /* [04001100 / 080] 40834800 */ mtc0 r3, dpc_end
 @@f2:
-/* [04001104 / 084] afa30004 */ sw r3, 0x4(dmem_50_reg)
+/* [04001104 / 084] afa30004 */ sw r3, 0x4(rsp_state)
 /* [04001108 / 088] 201707b0 */ addi r23, r0, 0x7b0
 /* [0400110c / 08c] 0d000498 */ jal turbo3d_04001260
 /* [04001110 / 090] 8c3a0030 */ lw r26, 0x30(OSTask) ; data_ptr
+
+dl_dma_wait:
 /* [04001114 / 094] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001118 / 098] 00000000 */ nop
 /* [0400111c / 09c] 201b0640 */ addi r27, r0, 0x640
-@lab_04001120:
+decode_dl:
 /* [04001120 / 0a0] 8f630000 */ lw r3, 0x0(r27)
 /* [04001124 / 0a4] 8f790004 */ lw r25, 0x4(r27)
 /* [04001128 / 0a8] 8f780008 */ lw r24, 0x8(r27)
 /* [0400112c / 0ac] 8f7e000c */ lw r30, 0xc(r27)
-/* [04001130 / 0b0] 235a0010 */ addi r26, r26, 0x10
-/* [04001134 / 0b4] 237b0010 */ addi r27, r27, 0x10
-/* [04001138 / 0b8] 239cfff0 */ addi r28, r28, 0xfff0
+/* [04001130 / 0b0] 235a0010 */ addi r26, r26, 16
+/* [04001134 / 0b4] 237b0010 */ addi r27, r27, 16
+/* [04001138 / 0b8] 239cfff0 */ addi r28, r28, -16
 /* [0400113c / 0bc] 1060000a */ beqz r3, @@f3
 /* [04001140 / 0c0] 00039820 */ add r19, r0, r3
 /* [04001144 / 0c4] 0d0004a1 */ jal turbo3d_04001284
@@ -182,8 +208,8 @@ GT_FLAG_XFM_ONLY equ 0x04 ; xform vtx, write to *TriN
 /* [04001188 / 108] 00000000 */ nop
 /* [0400118c / 10c] 1300000b */ beqz r24, @@f4
 /* [04001190 / 110] 00189820 */ add r19, r0, r24
-/* [04001194 / 114] 83a50098 */ lb r5, dmem_gtStateL_vtxCount(dmem_50_reg)
-/* [04001198 / 118] 83a60099 */ lb r6, dmem_gtStateL_vtxV0(dmem_50_reg)
+/* [04001194 / 114] 83a50098 */ lb r5, dmem_gtStateL_vtxCount(rsp_state)
+/* [04001198 / 118] 83a60099 */ lb r6, dmem_gtStateL_vtxV0(rsp_state)
 /* [0400119c / 11c] 0d0004a1 */ jal turbo3d_04001284
 /* [040011a0 / 120] 20140140 */ addi r20, r0, 0x140
 /* [040011a4 / 124] 00063100 */ sll r6, r6, 4
@@ -197,19 +223,19 @@ GT_FLAG_XFM_ONLY equ 0x04 ; xform vtx, write to *TriN
 /* [040011c0 / 140] 00000000 */ nop
 /* [040011c4 / 144] 0d0004b6 */ jal wait_for_dma_finish
 /* [040011c8 / 148] 00000000 */ nop
-/* [040011cc / 14c] 83a5009b */ lb r5, dmem_gtStateL_flag(dmem_50_reg)
+/* [040011cc / 14c] 83a5009b */ lb r5, dmem_gtStateL_flag(rsp_state)
 /* [040011d0 / 150] 30a60004 */ andi r6, r5, 0x4
 /* [040011d4 / 154] 1cc0000a */ bgtz r6, @@f5
-/* [040011d8 / 158] 83a5009a */ lb r5, dmem_gtStateL_triCount(dmem_50_reg)
+/* [040011d8 / 158] 83a5009a */ lb r5, dmem_gtStateL_triCount(rsp_state)
 /* [040011dc / 15c] 10a00008 */ beqz r5, @@f5
 /* [040011e0 / 160] 001e9820 */ add r19, r0, r30
 /* [040011e4 / 164] 0d0004a1 */     jal turbo3d_04001284
-/* [040011e8 / 168] 20140540 */     addi r20, r0, 0x540
+/* [040011e8 / 168] 20140540 */     addi DMA_DEST, r0, 0x540
 /* [040011ec / 16c] 00052880 */     sll r5, r5, 2
-/* [040011f0 / 170] 20b2ffff */     addi r18, r5, -1
-/* [040011f4 / 174] 83a5009b */     lb r5, dmem_gtStateL_flag(dmem_50_reg)
+/* [040011f0 / 170] 20b2ffff */     addi DMA_LEN, r5, -1
+/* [040011f4 / 174] 83a5009b */     lb r5, dmem_gtStateL_flag(rsp_state)
 /* [040011f8 / 178] 0d0004a9 */     jal dma_read_write
-/* [040011fc / 17c] 20110000 */     addi r17, r0, 0x0
+/* [040011fc / 17c] 20110000 */     addi DMA_ISWRITE, r0, FALSE
 @@f5:
 /* [04001200 / 180] 30a50002 */ andi r5, r5, 0x2
 /* [04001204 / 184] 1ca00003 */ bgtz r5, @@f6
@@ -219,7 +245,7 @@ GT_FLAG_XFM_ONLY equ 0x04 ; xform vtx, write to *TriN
 @@f6:
 /* [04001214 / 194] 0d0004b6 */ jal wait_for_dma_finish
 /* [04001218 / 198] 00000000 */ nop
-/* [0400121c / 19c] 0d0005d3 */ jal turbo3d_0400174c
+/* [0400121c / 19c] 0d0005d3 */ jal triangle_draw_handler
 /* [04001220 / 1a0] 00000000 */ nop
 
 @lab_04001224:
@@ -227,7 +253,7 @@ GT_FLAG_XFM_ONLY equ 0x04 ; xform vtx, write to *TriN
 /* [04001228 / 1a8] 30420080 */ andi r2, r2, 0x80
 /* [0400122c / 1ac] 14400031 */ bnez r2, @lab_040012f4
 /* [04001230 / 1b0] 00000000 */ nop
-/* [04001234 / 1b4] 1f80ffba */ bgtz r28, @lab_04001120
+/* [04001234 / 1b4] 1f80ffba */ bgtz r28, decode_dl
 /* [04001238 / 1b8] 00000000 */ nop
 /* [0400123c / 1bc] 09000498 */ j turbo3d_04001260
 /* [04001240 / 1c0] 841f004c */ lh ra, 0x4c(r0)
@@ -316,11 +342,11 @@ wait_for_dma_finish:
 /* [04001338 / 2b8] 09000489 */ j @lab_04001224
 /* [0400133c / 2bc] 8c1a073c */ lw r26, 0x73c(r0)
 
-turbo3d_04001340:
+setup_rdp:
 /* [04001340 / 2c0] 001fa820 */ add r21, r0, ra
-/* [04001344 / 2c4] 8fb30004 */ lw r19, 0x4(dmem_50_reg)
+/* [04001344 / 2c4] 8fb30004 */ lw r19, 0x4(rsp_state)
 /* [04001348 / 2c8] 22f2f850 */ addi r18, r23, 0xf850
-/* [0400134c / 2cc] 8fb7001c */ lw r23, 0x1c(dmem_50_reg)
+/* [0400134c / 2cc] 8fb7001c */ lw r23, 0x1c(rsp_state)
 /* [04001350 / 2d0] 1a40001a */ blez r18, @@f3
 /* [04001354 / 2d4] 0272a020 */ add r20, r19, r18
 /* [04001358 / 2d8] 02f4a022 */ sub r20, r23, r20
@@ -331,27 +357,27 @@ turbo3d_04001340:
 /* [04001368 / 2e8] 1680fffd */ bnez r20, @@b
 @@b2:
 /* [0400136c / 2ec] 40175000 */ mfc0 r23, dpc_current
-/* [04001370 / 2f0] 8fb30018 */ lw r19, 0x18(dmem_50_reg)
-/* [04001374 / 2f4] 12f3fffd */ beq r23, r19, @@b2
+/* [04001370 / 2f0] 8fb30018 */ lw DMA_SRC, 0x18(rsp_state)
+/* [04001374 / 2f4] 12f3fffd */ beq r23, DMA_SRC, @@b2
 /* [04001378 / 2f8] 00000000 */ nop
-/* [0400137c / 2fc] 40934000 */ mtc0 r19, dpc_start
+/* [0400137c / 2fc] 40934000 */ mtc0 DMA_SRC, dpc_start
 @@f:
 @@b3:
 /* [04001380 / 300] 40175000 */ mfc0 r23, dpc_current
-/* [04001384 / 304] 0277a022 */ sub r20, r19, r23
+/* [04001384 / 304] 0277a022 */ sub r20, DMA_SRC, r23
 /* [04001388 / 308] 06810004 */ bgez r20, @@f2
-/* [0400138c / 30c] 0272a020 */ add r20, r19, r18
+/* [0400138c / 30c] 0272a020 */ add r20, DMA_SRC, r18
 /* [04001390 / 310] 0297a022 */ sub r20, r20, r23
 /* [04001394 / 314] 0681fffa */ bgez r20, @@b3
 /* [04001398 / 318] 00000000 */ nop
 @@f2:
-/* [0400139c / 31c] 0272b820 */ add r23, r19, r18
+/* [0400139c / 31c] 0272b820 */ add r23, DMA_SRC, r18
 /* [040013a0 / 320] 2252ffff */ addi DMA_LEN, -1
 /* [040013a4 / 324] 201407b0 */ addi DMA_DEST, r0, 0x7B0
 /* [040013a8 / 328] 0d0004a9 */ jal dma_read_write
 /* [040013ac / 32c] 20110001 */ addi DMA_ISWRITE, r0, TRUE
 /* [040013b0 / 330] 0d0004b6 */ jal wait_for_dma_finish
-/* [040013b4 / 334] afb70004 */ sw r23, 0x4(dmem_50_reg)
+/* [040013b4 / 334] afb70004 */ sw r23, 0x4(rsp_state)
 /* [040013b8 / 338] 40974800 */ mtc0 r23, dpc_end
 @@f3:
 /* [040013bc / 33c] 02a00008 */ jr r21
@@ -360,7 +386,7 @@ turbo3d_04001340:
 turbo3d_040013c4:
 /* [040013c4 / 344] 001f2820 */ add r5, r0, ra
 /* [040013c8 / 348] 8c1300d8 */ lw r19, 0xd8(r0)
-/* [040013cc / 34c] cba01806 */ ldv $v0[0], 0x30(dmem_50_reg)
+/* [040013cc / 34c] cba01806 */ ldv $v0[0], 0x30(rsp_state)
 /* [040013d0 / 350] eae01800 */ sdv $v0[0], 0x0(r23)
 /* [040013d4 / 354] 22f70008 */ addi r23, r23, 0x8
 /* [040013d8 / 358] 1260002d */ beqz r19, @lab_04001490
@@ -409,12 +435,12 @@ turbo3d_040013c4:
 /* [04001474 / 3f4] 22f70008 */ addi r23, r23, 0x8
 /* [04001478 / 3f8] 1681ffe4 */ bne r20, r1, @@b
 /* [0400147c / 3fc] 00000000 */ nop
-/* [04001480 / 400] 0d0004d0 */ jal turbo3d_04001340
+/* [04001480 / 400] 0d0004d0 */ jal setup_rdp
 /* [04001484 / 404] 00000000 */ nop
 /* [04001488 / 408] 090004fb */ j @lab_040013ec
 /* [0400148c / 40c] 00000000 */ nop
 @lab_04001490:
-/* [04001490 / 410] 0d0004d0 */ jal turbo3d_04001340
+/* [04001490 / 410] 0d0004d0 */ jal setup_rdp
 /* [04001494 / 414] 00000000 */ nop
 /* [04001498 / 418] 00a00008 */ jr r5
 /* [0400149c / 41c] 00000000 */ nop
@@ -423,7 +449,7 @@ turbo3d_040013c4:
 ;   r25: gtState pointer
 dma_transform_mtx:
 /* [040014a0 / 420] 001f2820 */ add r5, r0, ra
-/* [040014a4 / 424] 83a7009b */ lb r7, dmem_gtStateL_flag(dmem_50_reg)
+/* [040014a4 / 424] 83a7009b */ lb r7, dmem_gtStateL_flag(rsp_state)
 /* [040014a8 / 428] 30e70001 */ andi r7, r7, GT_FLAG_NOMTX
 /* [040014ac / 42c] 1ce00009 */ bgtz r7, @@skipMtx
 /* [040014b0 / 430] 00199820 */ add DMA_SRC, r0, r25
@@ -436,10 +462,10 @@ dma_transform_mtx:
 /* [040014cc / 44c] 0d0004b6 */ jal wait_for_dma_finish
 /* [040014d0 / 450] 00000000 */ nop
 @@skipMtx:
-/* [040014d4 / 454] cba01814 */ ldv $v0[0], dmem_gtStateL_rdpOtherMode(dmem_50_reg)
+/* [040014d4 / 454] cba01814 */ ldv $v0[0], dmem_gtStateL_rdpOtherMode(rsp_state)
 /* [040014d8 / 458] eae01800 */ sdv $v0[0], 0x0(r23)
 /* [040014dc / 45c] 22f70008 */ addi r23, r23, 0x8
-/* [040014e0 / 460] 8fb3009c */ lw r19, dmem_gtStateL_rdpCmds(dmem_50_reg)
+/* [040014e0 / 460] 8fb3009c */ lw r19, dmem_gtStateL_rdpCmds(rsp_state)
 /* [040014e4 / 464] 1260ffea */ beqz r19, @lab_04001490
 /* [040014e8 / 468] 00000000 */ nop
 /* [040014ec / 46c] 0d0004a1 */ jal turbo3d_04001284
@@ -452,8 +478,8 @@ transform_vtx_handler:
 vtxPtr equ r22
 transformedVtxPtr equ r3 ; idk if this is true
 numVerticesLeft equ r5  ;  idk if this is true
-/* [04001500 / 480] 83a10098 */ lb r1, dmem_gtStateL_vtxCount(dmem_50_reg)
-/* [04001504 / 484] 83a20099 */ lb r2, dmem_gtStateL_vtxV0(dmem_50_reg)
+/* [04001500 / 480] 83a10098 */ lb r1, dmem_gtStateL_vtxCount(rsp_state)
+/* [04001504 / 484] 83a20099 */ lb r2, dmem_gtStateL_vtxV0(rsp_state)
 /* [04001508 / 488] 20160140 */ addi vtxPtr, r0, 0x140
 /* [0400150c / 48c] 1020008c */ beqz r1, @@f2
 /* [04001510 / 490] ac1f0070 */ sw ra, 0x70(r0)
@@ -489,7 +515,7 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [04001588 / 508] c88a1801 */ ldv $v10[0], 0x8(r4)
 /* [0400158c / 50c] c8891c00 */ ldv $v9[8], 0x0(r4)
 /* [04001590 / 510] c88a1c01 */ ldv $v10[8], 0x8(r4)
-/* [04001594 / 514] cba80814 */ lsv $v8[0], 0x28(dmem_50_reg)
+/* [04001594 / 514] cba80814 */ lsv $v8[0], 0x28(rsp_state)
 /* [04001598 / 518] 4a1d4a47 */ vmudh $v9, $v9, $v29
 
 @@b:
@@ -561,33 +587,33 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [040016a0 / 620] cad41c06 */ ldv $v20[8], 0x30(r22)
 /* [040016a4 / 624] 4b1fff0e */ vmadn $v28, $v31, $v31[0]
 /* [040016a8 / 628] 4a4c94a0 */ vlt $v18, $v18, $v12[0q]
-/* [040016ac / 62c] 20a5ffff */ addi numVerticesLeft, numVerticesLeft, -1
+/* [040016ac / 62c] 20a5ffff */ addi numVerticesLeft, -1
 /* [040016b0 / 630] 4a4cdee0 */ vlt $v27, $v27, $v12[0q]
 /* [040016b4 / 634] 4b5f9490 */ vadd $v18, $v18, $v31[2]
 /* [040016b8 / 638] 4b5fded0 */ vadd $v27, $v27, $v31[2]
 /* [040016bc / 63c] 4bdf94a8 */ vand $v18, $v18, $v31[6]
 /* [040016c0 / 640] 4bdfdee8 */ vand $v27, $v27, $v31[6]
-/* [040016c4 / 644] e8721800 */ sdv $v18[0], 0x0(transformedVtxPtr)
-/* [040016c8 / 648] e8730a03 */ ssv $v19[4], 0x6(transformedVtxPtr)
+/* [040016c4 / 644] e8721800 */ sdv $v18[0], (vtx_xyz)(transformedVtxPtr)
+/* [040016c8 / 648] e8730a03 */ ssv $v19[4], (vtx_flag)(transformedVtxPtr)
 /* [040016cc / 64c] 18a0000d */ blez numVerticesLeft, @@f
 /* [040016d0 / 650] 20a5ffff */ addi numVerticesLeft, numVerticesLeft, -1
-/* [040016d4 / 654] e8721c02 */ sdv $v18[8], 0x10(transformedVtxPtr)
-/* [040016d8 / 658] e8730e0b */ ssv $v19[12], 0x16(transformedVtxPtr)
+/* [040016d4 / 654] e8721c02 */ sdv $v18[8], (0x10 + vtx_xyz)(transformedVtxPtr)
+/* [040016d8 / 658] e8730e0b */ ssv $v19[12], (0x10 + vtx_flag)(transformedVtxPtr)
 /* [040016dc / 65c] 18a00009 */ blez numVerticesLeft, @@f
 /* [040016e0 / 660] 20a5ffff */ addi numVerticesLeft, numVerticesLeft, -1
-/* [040016e4 / 664] e87b1804 */ sdv $v27[0], 0x20(transformedVtxPtr)
-/* [040016e8 / 668] e87c0a13 */ ssv $v28[4], 0x26(transformedVtxPtr)
+/* [040016e4 / 664] e87b1804 */ sdv $v27[0], (0x20 + vtx_xyz)(transformedVtxPtr)
+/* [040016e8 / 668] e87c0a13 */ ssv $v28[4], (0x20 + vtx_flag)(transformedVtxPtr)
 /* [040016ec / 66c] 18a00005 */ blez numVerticesLeft, @@f
 /* [040016f0 / 670] 20a5ffff */ addi numVerticesLeft, numVerticesLeft, -1
-/* [040016f4 / 674] e87b1c06 */ sdv $v27[8], 0x30(transformedVtxPtr)
-/* [040016f8 / 678] e87c0e1b */ ssv $v28[12], 0x36(transformedVtxPtr)
+/* [040016f4 / 674] e87b1c06 */ sdv $v27[8], (0x30 + vtx_xyz)(transformedVtxPtr)
+/* [040016f8 / 678] e87c0e1b */ ssv $v28[12], (0x30 + vtx_flag)(transformedVtxPtr)
 /* [040016fc / 67c] 1ca0ffa7 */ bgtz numVerticesLeft, @@b
 /* [04001700 / 680] 20630040 */ addi transformedVtxPtr, 0x40
 
 @@f:
-/* [04001704 / 684] 83a5009b */ lb r5, dmem_gtStateL_flag(dmem_50_reg)
-/* [04001708 / 688] 83a10098 */ lb r1, dmem_gtStateL_vtxCount(dmem_50_reg)
-/* [0400170c / 68c] 83a20099 */ lb r2, dmem_gtStateL_vtxV0(dmem_50_reg)
+/* [04001704 / 684] 83a5009b */ lb r5, dmem_gtStateL_flag(rsp_state)
+/* [04001708 / 688] 83a10098 */ lb r1, dmem_gtStateL_vtxCount(rsp_state)
+/* [0400170c / 68c] 83a20099 */ lb r2, dmem_gtStateL_vtxV0(rsp_state)
 /* [04001710 / 690] 30a50004 */ andi r5, r5, GT_FLAG_XFM_ONLY
 /* [04001714 / 694] 20160140 */ addi r22, r0, 0x140
 /* [04001718 / 698] 10a00009 */ beqz r5, @@f2
@@ -606,17 +632,17 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [04001744 / 6c4] 03e00008 */ jr ra
 /* [04001748 / 6c8] 00000000 */ nop
 
-turbo3d_0400174c:
-/* [0400174c / 6cc] 83aa009b */ lb r10, dmem_gtStateL_flag(dmem_50_reg)
+triangle_draw_handler:
+/* [0400174c / 6cc] 83aa009b */ lb r10, dmem_gtStateL_flag(rsp_state)
 /* [04001750 / 6d0] 314a0004 */ andi r10, r10, GT_FLAG_XFM_ONLY
 /* [04001754 / 6d4] 1d40feb3 */ bgtz r10, @lab_04001224
 /* [04001758 / 6d8] ac1f0070 */ sw ra, 0x70(r0)
 /* [0400175c / 6dc] 20010540 */ addi r1, r0, 0x540
-/* [04001760 / 6e0] 83a2009a */ lb r2, dmem_gtStateL_triCount(dmem_50_reg)
+/* [04001760 / 6e0] 83a2009a */ lb r2, dmem_gtStateL_triCount(rsp_state)
 /* [04001764 / 6e4] 00021080 */ sll r2, r2, 2
 /* [04001768 / 6e8] 10400016 */ beqz r2, @noTris
 /* [0400176c / 6ec] 00411020 */ add r2, r2, r1
-/* [04001770 / 6f0] 8fab0090 */ lw r11, dmem_gtStateL_renderState(dmem_50_reg)
+/* [04001770 / 6f0] 8fab0090 */ lw r11, dmem_gtStateL_renderState(rsp_state)
 
 @bigman_loop:
 /* [04001774 / 6f4] 1022000e */ beq r1, r2, @lab_040017b0
@@ -639,7 +665,7 @@ turbo3d_0400174c:
 /* [040017b0 / 730] 3c01e700 */ lui r1, 0xe700
 /* [040017b4 / 734] aee10000 */ sw r1, 0x0(r23)
 /* [040017b8 / 738] aee00004 */ sw r0, 0x4(r23)
-/* [040017bc / 73c] 0d0004d0 */ jal turbo3d_04001340
+/* [040017bc / 73c] 0d0004d0 */ jal setup_rdp
 /* [040017c0 / 740] 22f70008 */ addi r23, r23, 0x8
 @noTris:
 /* [040017c4 / 744] 8c1f0070 */ lw ra, 0x70(r0)
@@ -656,7 +682,7 @@ turbo3d_0400174c:
 /* [040017e8 / 768] c8891000 */ llv $v9[0], 0x0(r4)
 /* [040017ec / 76c] c8aa1000 */ llv $v10[0], 0x0(r5)
 /* [040017f0 / 770] c8cb1000 */ llv $v11[0], 0x0(r6)
-/* [040017f4 / 774] 8fab0090 */ lw r11, dmem_gtStateL_renderState(dmem_50_reg)
+/* [040017f4 / 774] 8fab0090 */ lw r11, dmem_gtStateL_renderState(rsp_state)
 /* [040017f8 / 778] 4a095191 */ vsub $v6, $v10, $v9
 /* [040017fc / 77c] 4a095951 */ vsub $v5, $v11, $v9
 /* [04001800 / 780] 4a0a4a11 */ vsub $v8, $v9, $v10
@@ -776,13 +802,13 @@ turbo3d_0400174c:
 /* [040019b4 / 934] 4a19d68e */ vmadn $v26, $v26, $v25
 /* [040019b8 / 938] 4a19decf */ vmadh $v27, $v27, $v25
 /* [040019bc / 93c] 05400002 */ bltz r10, @@f5
-/* [040019c0 / 940] 83a80093 */ lb r8, 0x93(dmem_50_reg)
+/* [040019c0 / 940] 83a80093 */ lb r8, 0x93(rsp_state)
 /* [040019c4 / 944] 20090000 */ addi r9, r0, 0x0
 @@f5:
 /* [040019c8 / 948] 4b9f0145 */ vmudm $v5, $v0, $v31[4]
 /* [040019cc / 94c] 4b1ff98e */ vmadn $v6, $v31, $v31[0]
 /* [040019d0 / 950] 4b204f30 */ vrcp $v28[1], $v0[1]
-/* [040019d4 / 954] 83aa0097 */ lb r10, 0x97(dmem_50_reg)
+/* [040019d4 / 954] 83aa0097 */ lb r10, 0x97(rsp_state)
 /* [040019d8 / 958] 4b1f4f72 */ vrcph $v29[1], $v31[0]
 /* [040019dc / 95c] 350800cc */ ori r8, r8, 0xcc
 /* [040019e0 / 960] 4b605f30 */ vrcp $v28[3], $v0[3]
@@ -884,7 +910,7 @@ turbo3d_0400174c:
 /* [04001b5c / adc] eaf30f78 */ ssv $v19[14], -0x10(r23)
 /* [04001b60 / ae0] eae10f79 */ ssv $v1[14], -0xe(r23)
 @@f7:
-/* [04001b64 / ae4] 0d0004d0 */ jal turbo3d_04001340
+/* [04001b64 / ae4] 0d0004d0 */ jal setup_rdp
 @@f8:
 /* [04001b68 / ae8] 00000000 */ nop
 /* [04001b6c / aec] 090005dd */ j @bigman_loop
