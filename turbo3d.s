@@ -1,36 +1,36 @@
 .rsp
 
 .create DATA_FILE, 0
-; .word  0x00000001, 0x0002FFFF, 0x7FFF0004, 0xFFFC0200
-; .word  0x7ffffff8, 0x000800fd, 0x00208000, 0x01cccccc
-; .word  0x0001ffff, 0x00010001, 0x0001ffff, 0x00010001
-; .word  0x00020002, 0x00020002, 0x00020002, 0x00020002
+.area 0x1000
+; two vectors with helpful constants
 dmem_00:
-.dh    0, 1, 2, -1, 16384, 4, -4, 512
-dmem_qvector_00 equ lo(dmem_00)
-
+.dh    0, 1, 2, -1, 0x4000, 4, 0xFFFC, 512
+dmem_constvector_00 equ lo(dmem_00)
 dmem_10:
 .dh    32767, -8, 8, 0xFD, 0x20, 0x8000, 0x01CC, 0xCCCC
-dmem_qvector_10 equ lo(dmem_10)
+dmem_constvector_10 equ lo(dmem_10)
 
 dmem_20:
 .dh    1, -1, 1, 1, 1, -1, 1, 1
-dmem_qvector_20 equ lo(dmem_20)
+opengl_correction_scale_vec equ lo(dmem_20)
 
+; newtons iteration (el 3 and 7 must be 2)
 dmem_30:
 .dh    2, 2, 2, 2, 2, 2, 2, 2
-dmem_qvector_30 equ lo(dmem_30)
+newton_iterator_vec equ lo(dmem_30)
 
 dmem_40:
-.word  0x0ffaf006, 0x7fff0000
-dmem_dvector_40 equ lo(dmem_40)
+.dh  4090, -4090, 0x7FFF, 0
+dmem_screenclamp_vec equ lo(dmem_40)
 
 dmem_48:
 .word  0x00ffffff
+dmem_segment_mask equ lo(dmem_48)
+
 dmem_4C:
 .dh lo(dl_dma_wait)
 .align 4
-mask_segmented_addr equ lo(dmem_48)
+dmem_dma_wait equ lo(dmem_4C)
 
 dmem_50: ; some sort of OSTask reference
 .word  0x00000000, 0x00000000, 0x00000000, 0x00000000
@@ -40,11 +40,27 @@ output_buff_ptr equ 0x18
 output_buff_size equ 0x1C
 .word  0x00000000
 
-.word  0x00000000, 0x00000000, 0xffff0000, 0x00000000
+dmem_70:
+.word  0x00000000
+.align 8
+dmem_returnaddr equ lo(dmem_70)
+
+dmem_78:
+.dh 0xffff
+.align 8
+dmem_gtGlobState equ lo(dmem_78)
+dmem_perspnorm equ lo(dmem_78)
+
+dmem_80:
+.fill 8,0
+dmem_globStateOtherMode equ lo(dmem_80)
+
+; dmem_88
+
 .area 0xA8 - ., 0
-    ; the rest of data_50
+    ; the rest of dmem_rsp_state
 .endarea
-data_50 equ lo(dmem_50)
+dmem_rsp_state equ lo(dmem_50)
 
 .area 0xE0 - ., 0
 
@@ -71,6 +87,13 @@ dmem_F8:
 .endarea
 dmem_gtStateMtx equ lo(dmem_F8)
 
+.area 0x140 - ., 0
+
+.endarea
+
+dmem_140:
+    .fill 1024, 0
+dmem_vertexbuffer equ lo(dmem_140)
 
 .area 0x640 - ., 0
     ; fil
@@ -85,6 +108,7 @@ dmem_640:
     ; scratch space?
 .endarea
 
+.endarea
 .close
 
 .create CODE_FILE, 0x04001080
@@ -131,15 +155,15 @@ v_viewport_scale equ $v9
 v_viewport_translation equ $v10
 
 entry:
-/* [04001080 / 000] 201d0050 */ addi rsp_state, r0, data_50
+/* [04001080 / 000] 201d0050 */ addi rsp_state, r0, dmem_rsp_state
 /* [04001084 / 004] 34022800 */ ori r2, r0, 0x2800
 /* [04001088 / 008] 40822000 */ mtc0 r2, sp_status
 /* [0400108c / 00c] 8c220028 */ lw r2, 0x28(OSTask) ; task.t.output_buff
 /* [04001090 / 010] 8c23002c */ lw r3, 0x2c(OSTask) ; task.t.output_buff_size
 /* [04001094 / 014] afa00004 */ sw r0, 0x4 (rsp_state)
 /* [04001098 / 018] afa30010 */ sw r3, 0x10(rsp_state)
-/* [0400109c / 01c] c81f2000 */ lqv $v31[0], dmem_qvector_00(r0)
-/* [040010a0 / 020] c81e2001 */ lqv $v30[0], dmem_qvector_10(r0)
+/* [0400109c / 01c] c81f2000 */ lqv $v31[0], dmem_constvector_00(r0)
+/* [040010a0 / 020] c81e2001 */ lqv $v30[0], dmem_constvector_10(r0)
 /* [040010a4 / 024] 8c370028 */ lw r23, 0x28(OSTask) ; task.t.output_buff
 /* [040010a8 / 028] 8c23002c */ lw  r3, 0x2c(OSTask) ; task.t.output_buff_size
 /* [040010ac / 02c] afb70018 */ sw r23, 0x18(rsp_state)
@@ -187,7 +211,7 @@ decode_dl:
 /* [0400113c / 0bc] 1060000a */ beqz r3, @@f3
 /* [04001140 / 0c0] 00039820 */ add r19, r0, r3
 /* [04001144 / 0c4] 0d0004a1 */ jal turbo3d_04001284
-/* [04001148 / 0c8] 20140078 */ addi r20, r0, 0x78
+/* [04001148 / 0c8] 20140078 */ addi r20, r0, dmem_gtGlobState
 /* [0400114c / 0cc] 20120063 */ addi r18, r0, 0x63
 /* [04001150 / 0d0] 0d0004a9 */ jal dma_read_write
 /* [04001154 / 0d4] 20110000 */ addi r17, r0, 0x0
@@ -211,7 +235,7 @@ decode_dl:
 /* [04001194 / 114] 83a50098 */ lb r5, dmem_gtStateL_vtxCount(rsp_state)
 /* [04001198 / 118] 83a60099 */ lb r6, dmem_gtStateL_vtxV0(rsp_state)
 /* [0400119c / 11c] 0d0004a1 */ jal turbo3d_04001284
-/* [040011a0 / 120] 20140140 */ addi r20, r0, 0x140
+/* [040011a0 / 120] 20140140 */ addi r20, r0, dmem_vertexbuffer
 /* [040011a4 / 124] 00063100 */ sll r6, r6, 4
 /* [040011a8 / 128] 0286a020 */ add r20, r20, r6
 /* [040011ac / 12c] 00052900 */ sll r5, r5, 4
@@ -279,10 +303,11 @@ turbo3d_04001260:
 /* [04001280 / 200] 201b0640 */ addi r27, r0, 0x640
 
 turbo3d_04001284:
-/* [04001284 / 204] 8c0b0048 */ lw r11, 0x48(r0)
+mask equ r11
+/* [04001284 / 204] 8c0b0048 */ lw mask, dmem_segment_mask(r0)
 /* [04001288 / 208] 00136582 */ srl r12, r19, 22
 /* [0400128c / 20c] 318c003c */ andi r12, r12, 0x3c
-/* [04001290 / 210] 026b9824 */ and r19, r19, r11
+/* [04001290 / 210] 026b9824 */ and r19, r19, mask
 /* [04001294 / 214] 000c6820 */ add r13, r0, r12
 /* [04001298 / 218] 8dac0088 */ lw r12, 0x88(r13)
 /* [0400129c / 21c] 03e00008 */ jr ra
@@ -386,8 +411,8 @@ setup_rdp:
 turbo3d_040013c4:
 /* [040013c4 / 344] 001f2820 */ add r5, r0, ra
 /* [040013c8 / 348] 8c1300d8 */ lw r19, 0xd8(r0)
-/* [040013cc / 34c] cba01806 */ ldv $v0[0], 0x30(rsp_state)
-/* [040013d0 / 350] eae01800 */ sdv $v0[0], 0x0(r23)
+/* [040013cc / 34c] cba01806 */ ldv v_matrix0_i[0], 0x30(rsp_state)
+/* [040013d0 / 350] eae01800 */ sdv v_matrix0_i[0], 0x0(r23)
 /* [040013d4 / 354] 22f70008 */ addi r23, r23, 0x8
 /* [040013d8 / 358] 1260002d */ beqz r19, @lab_04001490
 /* [040013dc / 35c] 00000000 */ nop
@@ -462,8 +487,8 @@ dma_transform_mtx:
 /* [040014cc / 44c] 0d0004b6 */ jal wait_for_dma_finish
 /* [040014d0 / 450] 00000000 */ nop
 @@skipMtx:
-/* [040014d4 / 454] cba01814 */ ldv $v0[0], dmem_gtStateL_rdpOtherMode(rsp_state)
-/* [040014d8 / 458] eae01800 */ sdv $v0[0], 0x0(r23)
+/* [040014d4 / 454] cba01814 */ ldv v_matrix0_i[0], dmem_gtStateL_rdpOtherMode(rsp_state)
+/* [040014d8 / 458] eae01800 */ sdv v_matrix0_i[0], 0x0(r23)
 /* [040014dc / 45c] 22f70008 */ addi r23, r23, 0x8
 /* [040014e0 / 460] 8fb3009c */ lw r19, dmem_gtStateL_rdpCmds(rsp_state)
 /* [040014e4 / 464] 1260ffea */ beqz r19, @lab_04001490
@@ -480,11 +505,11 @@ transformedVtxPtr equ r3 ; idk if this is true
 numVerticesLeft equ r5  ;  idk if this is true
 /* [04001500 / 480] 83a10098 */ lb r1, dmem_gtStateL_vtxCount(rsp_state)
 /* [04001504 / 484] 83a20099 */ lb r2, dmem_gtStateL_vtxV0(rsp_state)
-/* [04001508 / 488] 20160140 */ addi vtxPtr, r0, 0x140
+/* [04001508 / 488] 20160140 */ addi vtxPtr, r0, dmem_vertexbuffer
 /* [0400150c / 48c] 1020008c */ beqz r1, @@f2
 /* [04001510 / 490] ac1f0070 */ sw ra, 0x70(r0)
 /* [04001514 / 494] 20250000 */ addi numVerticesLeft, r1, 0x0
-/* [04001518 / 498] 20030140 */ addi transformedVtxPtr, r0, 0x140
+/* [04001518 / 498] 20030140 */ addi transformedVtxPtr, r0, dmem_vertexbuffer
 /* [0400151c / 49c] 00022100 */ sll r4, r2, 4
 /* [04001520 / 4a0] 00641820 */ add transformedVtxPtr, r4
 /* [04001524 / 4a4] 02c4b020 */ add vtxPtr, r4
@@ -493,23 +518,23 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [04001530 / 4b0] cad41804 */ ldv $v20[0], 0x20(vtxPtr)
 /* [04001534 / 4b4] cad41c06 */ ldv $v20[8], 0x30(vtxPtr)
 /* [04001538 / 4b8] 200400f8 */ addi r4, r0, dmem_gtStateMtx
-/* [0400153c / 4bc] c8801800 */ ldv $v0[0], 0x0(r4)
+/* [0400153c / 4bc] c8801800 */ ldv v_matrix0_i[0], 0x0(r4)
 /* [04001540 / 4c0] c8811801 */ ldv $v1[0], 0x8(r4)
 /* [04001544 / 4c4] c8821802 */ ldv $v2[0], 0x10(r4)
 /* [04001548 / 4c8] c8831803 */ ldv $v3[0], 0x18(r4)
-/* [0400154c / 4cc] c8841804 */ ldv $v4[0], 0x20(r4)
+/* [0400154c / 4cc] c8841804 */ ldv v_matrix0_f[0], 0x20(r4)
 /* [04001550 / 4d0] c8851805 */ ldv $v5[0], 0x28(r4)
 /* [04001554 / 4d4] c8861806 */ ldv $v6[0], 0x30(r4)
 /* [04001558 / 4d8] c8871807 */ ldv $v7[0], 0x38(r4)
-/* [0400155c / 4dc] c8801c00 */ ldv $v0[8], 0x0(r4)
+/* [0400155c / 4dc] c8801c00 */ ldv v_matrix0_i[8], 0x0(r4)
 /* [04001560 / 4e0] c8811c01 */ ldv $v1[8], 0x8(r4)
 /* [04001564 / 4e4] c8821c02 */ ldv $v2[8], 0x10(r4)
 /* [04001568 / 4e8] c8831c03 */ ldv $v3[8], 0x18(r4)
-/* [0400156c / 4ec] c8841c04 */ ldv $v4[8], 0x20(r4)
+/* [0400156c / 4ec] c8841c04 */ ldv v_matrix0_f[8], 0x20(r4)
 /* [04001570 / 4f0] c8851c05 */ ldv $v5[8], 0x28(r4)
 /* [04001574 / 4f4] c8861c06 */ ldv $v6[8], 0x30(r4)
 /* [04001578 / 4f8] c8871c07 */ ldv $v7[8], 0x38(r4)
-/* [0400157c / 4fc] c81d2002 */ lqv $v29[0], dmem_qvector_20(r0)
+/* [0400157c / 4fc] c81d2002 */ lqv $v29[0], opengl_correction_scale_vec(r0)
 /* [04001580 / 500] 200400c8 */ addi r4, r0, 0xc8
 /* [04001584 / 504] c8891800 */ ldv $v9[0], 0x0(r4)
 /* [04001588 / 508] c88a1801 */ ldv $v10[0], 0x8(r4)
@@ -519,16 +544,16 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [04001598 / 518] 4a1d4a47 */ vmudh $v9, $v9, $v29
 
 @@b:
-/* [0400159c / 51c] 4a8b2346 */ vmudn $v13, $v4, $v11[0h]
-/* [040015a0 / 520] 4a8b034f */ vmadh $v13, $v0, $v11[0h]
+/* [0400159c / 51c] 4a8b2346 */ vmudn $v13, v_matrix0_f, $v11[0h]
+/* [040015a0 / 520] 4a8b034f */ vmadh $v13, v_matrix0_i, $v11[0h]
 /* [040015a4 / 524] 4aab2b4e */ vmadn $v13, $v5, $v11[1h]
 /* [040015a8 / 528] 4aab0b4f */ vmadh $v13, $v1, $v11[1h]
 /* [040015ac / 52c] 4acb334e */ vmadn $v13, $v6, $v11[2h]
 /* [040015b0 / 530] 4acb134f */ vmadh $v13, $v2, $v11[2h]
 /* [040015b4 / 534] 4b3f3b4e */ vmadn $v13, $v7, $v31[1]
 /* [040015b8 / 538] 4b3f1b0f */ vmadh $v12, $v3, $v31[1]
-/* [040015bc / 53c] 4a942586 */ vmudn $v22, $v4, $v20[0h]
-/* [040015c0 / 540] 4a94058f */ vmadh $v22, $v0, $v20[0h]
+/* [040015bc / 53c] 4a942586 */ vmudn $v22, v_matrix0_f, $v20[0h]
+/* [040015c0 / 540] 4a94058f */ vmadh $v22, v_matrix0_i, $v20[0h]
 /* [040015c4 / 544] 4ab42d8e */ vmadn $v22, $v5, $v20[1h]
 /* [040015c8 / 548] 4ab40d8f */ vmadh $v22, $v1, $v20[1h]
 /* [040015cc / 54c] 4ad4358e */ vmadn $v22, $v6, $v20[2h]
@@ -567,9 +592,9 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [04001650 / 5d0] 4af9b60e */ vmadn $v24, $v22, $v25[3h]
 /* [04001654 / 5d4] 4af9adcf */ vmadh $v23, $v21, $v25[3h]
 /* [04001658 / 5d8] 4b087bc4 */ vmudl $v15, $v15, $v8[0]
-/* [0400165c / 5dc] c80c1808 */ ldv $v12[0], dmem_dvector_40(r0)
+/* [0400165c / 5dc] c80c1808 */ ldv $v12[0], dmem_screenclamp_vec(r0)
 /* [04001660 / 5e0] 4b08738d */ vmadm $v14, $v14, $v8[0]
-/* [04001664 / 5e4] c80c1c08 */ ldv $v12[8], dmem_dvector_40(r0)
+/* [04001664 / 5e4] c80c1c08 */ ldv $v12[8], dmem_screenclamp_vec(r0)
 /* [04001668 / 5e8] 4b1ffbce */ vmadn $v15, $v31, $v31[0]
 /* [0400166c / 5ec] 4b08c604 */ vmudl $v24, $v24, $v8[0]
 /* [04001670 / 5f0] 4b08bdcd */ vmadm $v23, $v23, $v8[0]
@@ -615,7 +640,7 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [04001708 / 688] 83a10098 */ lb r1, dmem_gtStateL_vtxCount(rsp_state)
 /* [0400170c / 68c] 83a20099 */ lb r2, dmem_gtStateL_vtxV0(rsp_state)
 /* [04001710 / 690] 30a50004 */ andi r5, r5, GT_FLAG_XFM_ONLY
-/* [04001714 / 694] 20160140 */ addi r22, r0, 0x140
+/* [04001714 / 694] 20160140 */ addi r22, r0, dmem_vertexbuffer
 /* [04001718 / 698] 10a00009 */ beqz r5, @@f2
 /* [0400171c / 69c] 00022100 */ sll r4, r2, 4
 /* [04001720 / 6a0] 02c4b020 */ add r22, r22, r4
@@ -652,9 +677,9 @@ triangle_draw_handler:
 /* [04001784 / 704] 00042100 */ sll r4, r4, 4
 /* [04001788 / 708] 00052900 */ sll r5, r5, 4
 /* [0400178c / 70c] 00063100 */ sll r6, r6, 4
-/* [04001790 / 710] 20840140 */ addi r4, r4, 0x140
-/* [04001794 / 714] 20a50140 */ addi r5, r5, 0x140
-/* [04001798 / 718] 20c60140 */ addi r6, r6, 0x140
+/* [04001790 / 710] 20840140 */ addi r4, r4, dmem_vertexbuffer
+/* [04001794 / 714] 20a50140 */ addi r5, r5, dmem_vertexbuffer
+/* [04001798 / 718] 20c60140 */ addi r6, r6, dmem_vertexbuffer
 /* [0400179c / 71c] 316a0200 */ andi r10, r11, GT_SHADING_SMOOTH
 /* [040017a0 / 720] 1140000a */ beqz r10, @lab_040017cc
 @lab_040017a4:
@@ -728,7 +753,7 @@ triangle_draw_handler:
 /* [04001894 / 814] c8aa1000 */ llv $v10[0], 0x0(r5)
 /* [04001898 / 818] c8891000 */ llv $v9[0], 0x0(r4)
 /* [0400189c / 81c] 1a400004 */ blez r18, @@f3
-/* [040018a0 / 820] 4a0a5811 */ vsub $v0, $v11, $v10
+/* [040018a0 / 820] 4a0a5811 */ vsub v_matrix0_i, $v11, $v10
 /* [040018a4 / 824] 4b7fe706 */ vmudn $v28, $v28, $v31[3]
 /* [040018a8 / 828] 4b7fef4f */ vmadh $v29, $v29, $v31[3]
 /* [040018ac / 82c] 4b1fff0e */ vmadn $v28, $v31, $v31[0]
@@ -755,7 +780,7 @@ triangle_draw_handler:
 /* [040018f8 / 878] 4b1d5f73 */ vmov $v29[3], $v29[0]
 /* [040018fc / 87c] 01f17824 */ and r15, r15, r17
 /* [04001900 / 880] 4b1c5f33 */ vmov $v28[3], $v28[0]
-/* [04001904 / 884] 4b065033 */ vmov $v0[2], $v6[0]
+/* [04001904 / 884] 4b065033 */ vmov v_matrix0_i[2], $v6[0]
 /* [04001908 / 888] 12000097 */ beqz r16, @@f8
 /* [0400190c / 88c] 4bff8c45 */ vmudm $v17, $v17, $v31[7]
 /* [04001910 / 890] 4bff9cc5 */ vmudm $v19, $v19, $v31[7]
@@ -763,11 +788,11 @@ triangle_draw_handler:
 /* [04001918 / 898] 4bff9485 */ vmudm $v18, $v18, $v31[7]
 /* [0400191c / 89c] 4b1feee0 */ vlt $v27, $v29, $v31[0]
 /* [04001920 / 8a0] 318cfffc */ andi r12, r12, 0xfffc
-/* [04001924 / 8a4] 4b265833 */ vmov $v0[3], $v6[1]
+/* [04001924 / 8a4] 4b265833 */ vmov v_matrix0_i[3], $v6[1]
 /* [04001928 / 8a8] 31adfffc */ andi r13, r13, 0xfffc
-/* [0400192c / 8ac] 4b056033 */ vmov $v0[4], $v5[0]
+/* [0400192c / 8ac] 4b056033 */ vmov v_matrix0_i[4], $v5[0]
 /* [04001930 / 8b0] 31cefffc */ andi r14, r14, 0xfffc
-/* [04001934 / 8b4] 4b256833 */ vmov $v0[5], $v5[1]
+/* [04001934 / 8b4] 4b256833 */ vmov v_matrix0_i[5], $v5[1]
 /* [04001938 / 8b8] 480ad800 */ mfc2 r10, $v27[0]
 /* [0400193c / 8bc] c8931402 */ llv $v19[8], 0x8(r4)
 /* [04001940 / 8c0] 4b7d5ef2 */ vrcph $v27[3], $v29[3]
@@ -784,7 +809,7 @@ triangle_draw_handler:
 /* [0400196c / 8ec] c8d10f02 */ lsv $v17[14], 0x4(r6)
 /* [04001970 / 8f0] 4b1ffe8e */ vmadn $v26, $v31, $v31[0]
 /* [04001974 / 8f4] 4b1e7473 */ vmov $v17[6], $v30[0]
-/* [04001978 / 8f8] c8172003 */ lqv $v23[0], dmem_qvector_30(r0)
+/* [04001978 / 8f8] c8172003 */ lqv $v23[0], newton_iterator_vec(r0)
 /* [0400197c / 8fc] 4a1ffdac */ vxor $v22, $v31, $v31
 /* [04001980 / 900] 4a1cd604 */ vmudl $v24, $v26, $v28
 /* [04001984 / 904] 4a1cde0d */ vmadm $v24, $v27, $v28
@@ -805,15 +830,15 @@ triangle_draw_handler:
 /* [040019c0 / 940] 83a80093 */ lb r8, 0x93(rsp_state)
 /* [040019c4 / 944] 20090000 */ addi r9, r0, 0x0
 @@f5:
-/* [040019c8 / 948] 4b9f0145 */ vmudm $v5, $v0, $v31[4]
+/* [040019c8 / 948] 4b9f0145 */ vmudm $v5, v_matrix0_i, $v31[4]
 /* [040019cc / 94c] 4b1ff98e */ vmadn $v6, $v31, $v31[0]
-/* [040019d0 / 950] 4b204f30 */ vrcp $v28[1], $v0[1]
+/* [040019d0 / 950] 4b204f30 */ vrcp $v28[1], v_matrix0_i[1]
 /* [040019d4 / 954] 83aa0097 */ lb r10, 0x97(rsp_state)
 /* [040019d8 / 958] 4b1f4f72 */ vrcph $v29[1], $v31[0]
 /* [040019dc / 95c] 350800cc */ ori r8, r8, 0xcc
-/* [040019e0 / 960] 4b605f30 */ vrcp $v28[3], $v0[3]
+/* [040019e0 / 960] 4b605f30 */ vrcp $v28[3], v_matrix0_i[3]
 /* [040019e4 / 964] 4b1f5f72 */ vrcph $v29[3], $v31[0]
-/* [040019e8 / 968] 4ba06f30 */ vrcp $v28[5], $v0[5]
+/* [040019e8 / 968] 4ba06f30 */ vrcp $v28[5], v_matrix0_i[5]
 /* [040019ec / 96c] 012a4825 */ or r9, r9, r10
 /* [040019f0 / 970] 4b1f6f72 */ vrcph $v29[5], $v31[0]
 /* [040019f4 / 974] 4b5ee704 */ vmudl $v28, $v28, $v30[2]
@@ -821,7 +846,7 @@ triangle_draw_handler:
 /* [040019fc / 97c] 4b5eef4d */ vmadm $v29, $v29, $v30[2]
 /* [04001a00 / 980] a2e90001 */ sb r9, 0x1(r23)
 /* [04001a04 / 984] 4b1fff0e */ vmadn $v28, $v31, $v31[0]
-/* [04001a08 / 988] 4bbf0007 */ vmudh $v0, $v0, $v31[5]
+/* [04001a08 / 988] 4bbf0007 */ vmudh v_matrix0_i, v_matrix0_i, $v31[5]
 /* [04001a0c / 98c] c8a70800 */ lsv $v7[0], 0x0(r5)
 /* [04001a10 / 990] 4a46e084 */ vmudl $v2, $v28, $v6[0q]
 /* [04001a14 / 994] c8870a00 */ lsv $v7[4], 0x0(r4)
@@ -843,9 +868,9 @@ triangle_draw_handler:
 /* [04001a54 / 9d4] eae20b0f */ ssv $v2[6], 0x1e(r23)
 /* [04001a58 / 9d8] 4b1ffe0e */ vmadn $v24, $v31, $v31[0]
 /* [04001a5c / 9dc] eae70804 */ ssv $v7[0], 0x8(r23)
-/* [04001a60 / 9e0] 4b60b407 */ vmudh $v16, $v22, $v0[3]
+/* [04001a60 / 9e0] 4b60b407 */ vmudh $v16, $v22, v_matrix0_i[3]
 /* [04001a64 / 9e4] eae80805 */ ssv $v8[0], 0xa(r23)
-/* [04001a68 / 9e8] 4ba07c0f */ vmadh $v16, $v15, $v0[5]
+/* [04001a68 / 9e8] 4ba07c0f */ vmadh $v16, $v15, v_matrix0_i[5]
 /* [04001a6c / 9ec] eae10906 */ ssv $v1[2], 0xc(r23)
 /* [04001a70 / 9f0] 4b16b59d */ vsar $v22, $v22, $v22[0]
 /* [04001a74 / 9f4] eae10d0a */ ssv $v1[10], 0x14(r23)
@@ -883,8 +908,8 @@ triangle_draw_handler:
 @@f6:
 /* [04001af4 / a74] 310a0001 */ andi r10, r8, 0x1
 /* [04001af8 / a78] 1940001a */ blez r10, @@f7
-/* [04001afc / a7c] 4b80ac07 */ vmudh $v16, $v21, $v0[4]
-/* [04001b00 / a80] 4b40ac0f */ vmadh $v16, $v21, $v0[2]
+/* [04001afc / a7c] 4b80ac07 */ vmudh $v16, $v21, v_matrix0_i[4]
+/* [04001b00 / a80] 4b40ac0f */ vmadh $v16, $v21, v_matrix0_i[2]
 /* [04001b04 / a84] 4b15ad5d */ vsar $v21, $v21, $v21[0]
 /* [04001b08 / a88] 4b25295d */ vsar $v5, $v5, $v5[1]
 /* [04001b0c / a8c] 4b7a2c04 */ vmudl $v16, $v5, $v26[3]
