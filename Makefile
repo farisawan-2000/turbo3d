@@ -12,7 +12,7 @@ tools/armips: tools/armips.cpp
 
 build/t3d.bin: turbo3d.s tools/armips
 	$(info $*.data.bin)
-	cpp -P $< -o build/$<
+	cpp -P $< -o build/$< -I/usr/include/n64
 	tools/armips -strequ CODE_FILE $@ -strequ DATA_FILE build/t3d.data.bin -temp scratch_space/.t3d  build/$<
 	mips-linux-gnu-ld -r -b binary build/t3d.bin -o build/turbo3d_text.o
 	mips-linux-gnu-ld -r -b binary build/t3d.data.bin -o build/turbo3d_data.o
