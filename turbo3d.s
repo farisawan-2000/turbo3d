@@ -101,7 +101,7 @@ dmem_vertexbuffer equ lo(dmem_140)
 
 dmem_640:
 .area 0xF0
-    ; turbo3d_04001260 dma's to here
+    ; load_display_list dma's to here
 .endarea
 
 .area 0xBC0 - ., 0
@@ -112,7 +112,7 @@ dmem_640:
 .close
 
 .create CODE_FILE, 0x04001080
-
+.area 0x1000
 ; DEFINES (move to new file?)
 TRUE equ 1
 FALSE equ 0
@@ -174,6 +174,8 @@ vtx_flag equ 0x6
 #define v_screen_space_vtx_3_and_4_int $v27
 #define v_screen_space_vtx_3_and_4_frac $v28
 
+// start of gtinit
+
 entry:
 /* [000] */ addi rsp_state, r0, dmem_rsp_state
 /* [004] */ ori r2, r0, 0x2800
@@ -191,34 +193,36 @@ entry:
 /* [034] */ mfc0 r4, dpc_status
 /* [038] */ andi r4, r4, 0x1
 /* [03c] */ bnez r4, @@f
-/* [040] */ mfc0 r4, dpc_end
+/* [040] */  mfc0 r4, dpc_end
 /* [044] */ sub r23, r23, r4
 /* [048] */ bgtz r23, @@f
-/* [04c] */ mfc0 r5, dpc_current
+/* [04c] */  mfc0 r5, dpc_current
 /* [050] */ beqz r5, @@f
-/* [054] */ nop
+/* [054] */  nop
 /* [058] */ beq r5, r4, @@f
-/* [05c] */ nop
+/* [05c] */  nop
 /* [060] */ j @@f2
-/* [064] */ ori r3, r4, 0x0
+/* [064] */  ori r3, r4, 0x0
 @@f:
 @@b:
 /* [068] */ mfc0 r4, dpc_status
 /* [06c] */ andi r4, r4, 0x400
 /* [070] */ bnez r4, @@b
-/* [074] */ addi r4, r0, 0x1
+/* [074] */  addi r4, r0, 0x1
 /* [078] */ mtc0 r4, dpc_status
 /* [07c] */ mtc0 r3, dpc_start
 /* [080] */ mtc0 r3, dpc_end
 @@f2:
 /* [084] */ sw r3, 0x4(rsp_state)
 /* [088] */ addi r23, r0, 0x7b0
-/* [08c] */ jal turbo3d_04001260
-/* [090] */ lw r26, 0x30(OSTask) ; data_ptr
+/* [08c] */ jal load_display_list
+/* [090] */  lw r26, 0x30(OSTask) ; data_ptr
+
+// start of gtmain
 
 dl_dma_wait:
 /* [094] */ jal wait_for_dma_finish
-/* [098] */ nop
+/* [098] */  nop
 /* [09c] */ addi r27, r0, 0x640
 decode_dl:
 /* [0a0] */ lw r3, 0x0(r27)
@@ -228,90 +232,97 @@ decode_dl:
 /* [0b0] */ addi r26, r26, 16
 /* [0b4] */ addi r27, r27, 16
 /* [0b8] */ addi r28, r28, -16
-/* [0bc] */ beqz r3, @@f3
-/* [0c0] */ add r19, r0, r3
-/* [0c4] */ jal turbo3d_04001284
-/* [0c8] */ addi r20, r0, dmem_gtGlobState
+/* [0bc] */ beqz r3, @@skipGlob
+/* [0c0] */  add r19, r0, r3
+/* [0c4] */ jal segmented_to_virtual
+/* [0c8] */  addi r20, r0, dmem_gtGlobState
 /* [0cc] */ addi r18, r0, 0x63
 /* [0d0] */ jal dma_read_write
-/* [0d4] */ addi r17, r0, 0x0
+/* [0d4] */  addi r17, r0, 0x0
 /* [0d8] */ jal wait_for_dma_finish
-/* [0dc] */ nop
+/* [0dc] */  nop
 /* [0e0] */ jal turbo3d_040013c4
-/* [0e4] */ nop
-@@f3:
-/* [0e8] */ beqz r25, @lab_04001244
-/* [0ec] */ add r19, r0, r25
-/* [0f0] */ jal turbo3d_04001284
+/* [0e4] */  nop
+@@skipGlob:
+// Yield if no obj state
+/* [0e8] */ beqz r25, @task_done
+/* [0ec] */  add r19, r0, r25
+/* [0f0] */ jal segmented_to_virtual
 ; read in the Lite part of the current gtState
-/* [0f4] */ addi DMA_DEST, r0, dmem_gtStateL
+/* [0f4] */  addi DMA_DEST, r0, dmem_gtStateL
 /* [0f8] */ addi DMA_LEN, r0, 0x18 - 1
 /* [0fc] */ jal dma_read_write
-/* [100] */ addi DMA_ISWRITE, r0, FALSE
+/* [100] */  addi DMA_ISWRITE, r0, FALSE
 /* [104] */ jal wait_for_dma_finish
-/* [108] */ nop
+/* [108] */  nop
 /* [10c] */ beqz r24, @@f4
-/* [110] */ add r19, r0, r24
+/* [110] */  add r19, r0, r24
 /* [114] */ lb r5, dmem_gtStateL_vtxCount(rsp_state)
 /* [118] */ lb r6, dmem_gtStateL_vtxV0(rsp_state)
-/* [11c] */ jal turbo3d_04001284
-/* [120] */ addi r20, r0, dmem_vertexbuffer
+/* [11c] */ jal segmented_to_virtual
+/* [120] */  addi r20, r0, dmem_vertexbuffer
 /* [124] */ sll r6, r6, 4
 /* [128] */ add r20, r20, r6
 /* [12c] */ sll r5, r5, 4
 /* [130] */ addi r18, r5, -1
 /* [134] */ jal dma_read_write
-/* [138] */ addi r17, r0, 0x0
+/* [138] */  addi r17, r0, 0x0
 @@f4:
 /* [13c] */ jal dma_transform_mtx
-/* [140] */ nop
+/* [140] */  nop
 /* [144] */ jal wait_for_dma_finish
-/* [148] */ nop
+/* [148] */  nop
 /* [14c] */ lb r5, dmem_gtStateL_flag(rsp_state)
 /* [150] */ andi r6, r5, 0x4
-/* [154] */ bgtz r6, @@f5
-/* [158] */ lb r5, dmem_gtStateL_triCount(rsp_state)
-/* [15c] */ beqz r5, @@f5
-/* [160] */ add r19, r0, r30
-/* [164] */     jal turbo3d_04001284
+/* [154] */ bgtz r6, @@skipTriLoading
+/* [158] */  lb r5, dmem_gtStateL_triCount(rsp_state)
+/* [15c] */ beqz r5, @@skipTriLoading
+/* [160] */  add r19, r0, r30
+/* [164] */     jal segmented_to_virtual
 /* [168] */     addi DMA_DEST, r0, 0x540
 /* [16c] */     sll r5, r5, 2
 /* [170] */     addi DMA_LEN, r5, -1
 /* [174] */     lb r5, dmem_gtStateL_flag(rsp_state)
 /* [178] */     jal dma_read_write
 /* [17c] */     addi DMA_ISWRITE, r0, FALSE
-@@f5:
+@@skipTriLoading:
 /* [180] */ andi r5, r5, 0x2
-/* [184] */ bgtz r5, @@f6
-/* [188] */ nop
+/* [184] */ bgtz r5, @@noTransform
+/* [188] */  nop
 /* [18c] */ jal transform_vtx_handler
-/* [190] */ nop
-@@f6:
+/* [190] */  nop
+@@noTransform:
 /* [194] */ jal wait_for_dma_finish
-/* [198] */ nop
+/* [198] */  nop
 /* [19c] */ jal triangle_draw_handler
-/* [1a0] */ nop
+/* [1a0] */  nop
 
-@lab_04001224:
+gfx_done:
 /* [1a4] */ mfc0 r2, sp_status
 /* [1a8] */ andi r2, r2, 0x80
-/* [1ac] */ bnez r2, @lab_040012f4
-/* [1b0] */ nop
+/* [1ac] */ bnez r2, @rsp_yield
+/* [1b0] */  nop
 /* [1b4] */ bgtz r28, decode_dl
-/* [1b8] */ nop
-/* [1bc] */ j turbo3d_04001260
-/* [1c0] */ lh ra, 0x4c(r0)
+/* [1b8] */  nop
+/* [1bc] */ j load_display_list
+/* [1c0] */  lh ra, dmem_dma_wait(r0)
 
-@lab_04001244:
+@task_done:
+// nop'd out if non-DRAM ucode
 /* [1c4] */ nop
+@task_halt:
 /* [1c8] */ jal wait_for_dma_finish
-/* [1cc] */ ori r2, r0, 0x4000
+/* [1cc] */  ori r2, r0, 0x4000
 /* [1d0] */ mtc0 r2, sp_status
 /* [1d4] */ break 0
-/* [1d8] */ nop
+/* [1d8] */  nop
+#ifndef NON_MATCHING // free instruction save
 /* [1dc] */ addiu r0, r0, 0xbeef
+#endif
 
-turbo3d_04001260:
+// continue gtmain
+
+load_display_list:
 /* [1e0] */ addi r28, r0, 0xf0
 /* [1e4] */ add r21, r0, ra
 /* [1e8] */ addi DMA_DEST, r0, dmem_640
@@ -322,7 +333,7 @@ turbo3d_04001260:
 /* [1fc] */ jr r21
 /* [200] */ addi r27, r0, 0x640
 
-turbo3d_04001284:
+segmented_to_virtual:
 mask equ r11
 /* [204] */ lw mask, dmem_segment_mask(r0)
 /* [208] */ srl r12, r19, 22
@@ -366,7 +377,9 @@ wait_for_dma_finish:
 /* [268] */ nop
 /* [26c] */ jr ra
 /* [270] */ mtc0 r0, sp_semaphore
-@lab_040012f4:
+
+// start of gyield
+@rsp_yield:
 /* [274] */ ori r2, r0, 0x1000
 /* [278] */ sw r28, 0x734(r0)
 /* [27c] */ sw r27, 0x738(r0)
@@ -376,16 +389,17 @@ wait_for_dma_finish:
 /* [28c] */ ori DMA_DEST, r0, 0x0
 /* [290] */ ori DMA_LEN, r0, 0x65f
 /* [294] */ jal dma_read_write
-/* [298] */ ori DMA_ISWRITE, r0, TRUE
+/* [298] */  ori DMA_ISWRITE, r0, TRUE
 /* [29c] */ jal wait_for_dma_finish
-/* [2a0] */ nop
-/* [2a4] */ j @lab_04001244
-/* [2a8] */ mtc0 r2, sp_status
+/* [2a0] */  nop
+/* [2a4] */ j @task_done
+/* [2a8] */  mtc0 r2, sp_status
+rsp_yield_restart:
 /* [2ac] */ lw r23, 0x740(r0)
 /* [2b0] */ lw r28, 0x734(r0)
 /* [2b4] */ lw r27, 0x738(r0)
-/* [2b8] */ j @lab_04001224
-/* [2bc] */ lw r26, 0x73c(r0)
+/* [2b8] */ j gfx_done
+/* [2bc] */  lw r26, 0x73c(r0)
 
 // start of goutfifo
 // makes sure the RDP FIFO buffer is ready and dma'd
@@ -439,7 +453,7 @@ turbo3d_040013c4:
 /* [354] */ addi r23, r23, 0x8
 /* [358] */ beqz r19, @lab_04001490
 /* [35c] */ nop
-/* [360] */ jal turbo3d_04001284
+/* [360] */ jal segmented_to_virtual
 /* [364] */ nop
 /* [368] */ addi r6, r19, 0x0
 @lab_040013ec:
@@ -461,7 +475,7 @@ turbo3d_040013c4:
 /* [3a4] */ addi r4, r4, 0x3
 /* [3a8] */ bltz r4, @@f
 /* [3ac] */ nop
-/* [3b0] */     jal turbo3d_04001284
+/* [3b0] */     jal segmented_to_virtual
 /* [3b4] */     add r19, r3, r0
 /* [3b8] */     add r3, r19, r0
 @@f:
@@ -501,7 +515,7 @@ dma_transform_mtx:
 /* [428] */ andi r7, r7, GT_FLAG_NOMTX
 /* [42c] */ bgtz r7, @@skipMtx
 /* [430] */ add DMA_SRC, r0, r25
-/* [434] */ jal turbo3d_04001284
+/* [434] */ jal segmented_to_virtual
 /* [438] */  addi DMA_SRC, 0x18
 /* [43c] */ addi DMA_DEST, r0, dmem_gtStateMtx
 /* [440] */ addi DMA_LEN, r0, 0x40 - 1
@@ -516,7 +530,7 @@ dma_transform_mtx:
 /* [460] */ lw r19, dmem_gtStateL_rdpCmds(rsp_state)
 /* [464] */ beqz r19, @lab_04001490
 /* [468] */ nop
-/* [46c] */ jal turbo3d_04001284
+/* [46c] */ jal segmented_to_virtual
 /* [470] */ nop
 /* [474] */ addi r6, r19, 0x0
 /* [478] */ j @lab_040013ec
@@ -675,7 +689,7 @@ transform_vtx_handler:
 /* [69c] */ sll r4, r2, 4
 /* [6a0] */ add r22, r22, r4
 /* [6a4] */ add r19, r0, r30
-/* [6a8] */ jal turbo3d_04001284
+/* [6a8] */ jal segmented_to_virtual
 /* [6ac] */ addi r20, r0, 0x16
 /* [6b0] */ sll r1, r1, 4
 /* [6b4] */ addi DMA_LEN, r1, -1
@@ -692,7 +706,7 @@ transform_vtx_handler:
 triangle_draw_handler:
 /* [6cc] */ lb r10, dmem_gtStateL_flag(rsp_state)
 /* [6d0] */ andi r10, r10, GT_FLAG_XFM_ONLY
-/* [6d4] */ bgtz r10, @lab_04001224
+/* [6d4] */ bgtz r10, gfx_done
 /* [6d8] */ sw ra, 0x70(r0)
 /* [6dc] */ addi r1, r0, 0x540
 /* [6e0] */ lb r2, dmem_gtStateL_triCount(rsp_state)
@@ -974,5 +988,7 @@ triangle_draw_handler:
 /* [aec] */ j @bigman_loop
 /* [af0] */ nop
 .align 16
+
+.endarea
 .close
 
