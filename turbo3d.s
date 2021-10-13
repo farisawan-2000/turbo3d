@@ -138,21 +138,41 @@ vtx_xyz equ 0
 vtx_flag equ 0x6
 
 ; vreg names
-v_matrix0_i equ $v0
-v_matrix0_f equ $v4
+#define v_matrix0_i $v0
+#define v_matrix0_f $v4
 
-v_matrix1_i equ $v1
-v_matrix1_f equ $v5
+#define v_matrix1_i $v1
+#define v_matrix1_f $v5
 
-v_matrix2_i equ $v2
-v_matrix2_f equ $v6
+#define v_matrix2_i $v2
+#define v_matrix2_f $v6
 
-v_matrix3_i equ $v3
-v_matrix3_f equ $v7
+#define v_matrix3_i $v3
+#define v_matrix3_f $v7
 
-v_w_scale equ $v8
-v_viewport_scale equ $v9
-v_viewport_translation equ $v10
+#define v_w_scale $v8
+#define v_viewport_scale $v9
+#define v_viewport_translation $v10
+
+#define v_vtx_input_1_and_2 $v11
+#define v_vtx_output_1_and_2_int $v12
+#define v_vtx_output_1_and_2_frac $v13
+#define v_persp_correct_1_and_2_int $v14
+#define v_persp_correct_1_and_2_frac $v15
+#define v_w_reciprocal_1_and_2_int $v16
+#define v_w_reciprocal_1_and_2_frac $v17
+#define v_screen_space_vtx_1_and_2_int $v18
+#define v_screen_space_vtx_1_and_2_frac $v19
+
+#define v_vtx_input_3_and_4 $v20
+#define v_vtx_output_3_and_4_int $v21
+#define v_vtx_output_3_and_4_frac $v22
+#define v_persp_correct_3_and_4_int $v23
+#define v_persp_correct_3_and_4_frac $v24
+#define v_w_reciprocal_3_and_4_int $v25
+#define v_w_reciprocal_3_and_4_frac $v26
+#define v_screen_space_vtx_3_and_4_int $v27
+#define v_screen_space_vtx_3_and_4_frac $v28
 
 entry:
 /* [000] */ addi rsp_state, r0, dmem_rsp_state
@@ -367,6 +387,8 @@ wait_for_dma_finish:
 /* [2b8] */ j @lab_04001224
 /* [2bc] */ lw r26, 0x73c(r0)
 
+// start of goutfifo
+// makes sure the RDP FIFO buffer is ready and dma'd
 setup_rdp:
 /* [2c0] */ add r21, r0, ra
 /* [2c4] */ lw r19, 0x4(rsp_state)
@@ -408,6 +430,7 @@ setup_rdp:
 /* [33c] */ jr r21
 /* [340] */ addi r23, r0, 0x7b0
 
+// start of gtstate
 turbo3d_040013c4:
 /* [344] */ add r5, r0, ra
 /* [348] */ lw r19, 0xd8(r0)
@@ -499,16 +522,19 @@ dma_transform_mtx:
 /* [478] */ j @lab_040013ec
 /* [47c] */ nop
 
+
+// start of gtvtx
 transform_vtx_handler:
-vtxPtr equ r22
-transformedVtxPtr equ r3 ; idk if this is true
-numVerticesLeft equ r5  ;  idk if this is true
-/* [480] */ lb r1, dmem_gtStateL_vtxCount(rsp_state)
+#define vtxPtr r22
+#define transformedVtxPtr r3
+#define numVerticesLeft r5
+#define vtxCount r1
+/* [480] */ lb vtxCount, dmem_gtStateL_vtxCount(rsp_state)
 /* [484] */ lb r2, dmem_gtStateL_vtxV0(rsp_state)
 /* [488] */ addi vtxPtr, r0, dmem_vertexbuffer
-/* [48c] */ beqz r1, @@f2
-/* [490] */ sw ra, 0x70(r0)
-/* [494] */ addi numVerticesLeft, r1, 0x0
+/* [48c] */ beqz vtxCount, @@f2
+/* [490] */ sw ra, dmem_returnaddr(r0)
+/* [494] */ addi numVerticesLeft, vtxCount, 0x0
 /* [498] */ addi transformedVtxPtr, r0, dmem_vertexbuffer
 /* [49c] */ sll r4, r2, 4
 /* [4a0] */ add transformedVtxPtr, r4
@@ -518,14 +544,18 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [4b0] */ ldv $v20[0], 0x20(vtxPtr)
 /* [4b4] */ ldv $v20[8], 0x30(vtxPtr)
 /* [4b8] */ addi r4, r0, dmem_gtStateMtx
+
+#define LOAD_
+
 /* [4bc] */ ldv v_matrix0_i[0], 0x0(r4)
-/* [4c0] */ ldv $v1[0], 0x8(r4)
-/* [4c4] */ ldv $v2[0], 0x10(r4)
-/* [4c8] */ ldv $v3[0], 0x18(r4)
+/* [4c0] */ ldv v_matrix1_i[0], 0x8(r4)
+/* [4c4] */ ldv v_matrix2_i[0], 0x10(r4)
+/* [4c8] */ ldv v_matrix3_i[0], 0x18(r4)
 /* [4cc] */ ldv v_matrix0_f[0], 0x20(r4)
-/* [4d0] */ ldv $v5[0], 0x28(r4)
-/* [4d4] */ ldv $v6[0], 0x30(r4)
-/* [4d8] */ ldv $v7[0], 0x38(r4)
+/* [4d0] */ ldv v_matrix1_f[0], 0x28(r4)
+/* [4d4] */ ldv v_matrix2_f[0], 0x30(r4)
+/* [4d8] */ ldv v_matrix3_f[0], 0x38(r4)
+
 /* [4dc] */ ldv v_matrix0_i[8], 0x0(r4)
 /* [4e0] */ ldv $v1[8], 0x8(r4)
 /* [4e4] */ ldv $v2[8], 0x10(r4)
@@ -657,6 +687,8 @@ numVerticesLeft equ r5  ;  idk if this is true
 /* [6c4] */ jr ra
 /* [6c8] */ nop
 
+
+// start of gtsetup
 triangle_draw_handler:
 /* [6cc] */ lb r10, dmem_gtStateL_flag(rsp_state)
 /* [6d0] */ andi r10, r10, GT_FLAG_XFM_ONLY
@@ -704,6 +736,7 @@ triangle_draw_handler:
 /* [760] */ j @lab_040017a4
 /* [764] */ lw r7, 0xbb0(r7)
 @lab_040017e8:
+// TODO: put rejection here
 /* [768] */ llv $v9[0], 0x0(r4)
 /* [76c] */ llv $v10[0], 0x0(r5)
 /* [770] */ llv $v11[0], 0x0(r6)
