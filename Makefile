@@ -10,7 +10,7 @@ tools/armips: tools/armips.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti -pipe $^ -o $@ -lpthread $(ARMIPS_FLAGS)
 	chmod +x $@
 
-build/t3d.bin: turbo3d.s tools/armips
+build/t3d.bin: turbo3d.s tools/armips src/*.s
 	$(info $*.data.bin)
 	cpp -P $< -o build/$< -I/usr/include/n64
 	tools/armips -strequ CODE_FILE $@ -strequ DATA_FILE build/t3d.data.bin -temp scratch_space/.t3d  build/$<
