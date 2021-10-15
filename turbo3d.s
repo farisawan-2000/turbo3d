@@ -149,24 +149,24 @@ vtx_flag equ 0x6
 #define v_viewport_translation $v10
 
 #define v_vtx_input_1_and_2 $v11
-#define v_vtx_output_1_and_2_int $v12
-#define v_vtx_output_1_and_2_frac $v13
-#define v_persp_correct_1_and_2_int $v14
-#define v_persp_correct_1_and_2_frac $v15
-#define v_w_reciprocal_1_and_2_int $v16
-#define v_w_reciprocal_1_and_2_frac $v17
-#define v_screen_space_vtx_1_and_2_int $v18
-#define v_screen_space_vtx_1_and_2_frac $v19
+#define v_vtx_output_1_and_2_i $v12
+#define v_vtx_output_1_and_2_f $v13
+#define v_persp_correct_1_and_2_i $v14
+#define v_persp_correct_1_and_2_f $v15
+#define v_w_reciprocal_1_and_2_i $v16
+#define v_w_reciprocal_1_and_2_f $v17
+#define v_screen_space_vtx_1_and_2_i $v18
+#define v_screen_space_vtx_1_and_2_f $v19
 
 #define v_vtx_input_3_and_4 $v20
-#define v_vtx_output_3_and_4_int $v21
-#define v_vtx_output_3_and_4_frac $v22
-#define v_persp_correct_3_and_4_int $v23
-#define v_persp_correct_3_and_4_frac $v24
-#define v_w_reciprocal_3_and_4_int $v25
-#define v_w_reciprocal_3_and_4_frac $v26
-#define v_screen_space_vtx_3_and_4_int $v27
-#define v_screen_space_vtx_3_and_4_frac $v28
+#define v_vtx_output_3_and_4_i $v21
+#define v_vtx_output_3_and_4_f $v22
+#define v_persp_correct_3_and_4_i $v23
+#define v_persp_correct_3_and_4_f $v24
+#define v_w_reciprocal_3_and_4_i $v25
+#define v_w_reciprocal_3_and_4_f $v26
+#define v_screen_space_vtx_3_and_4_i $v27
+#define v_screen_space_vtx_3_and_4_f $v28
 
 #define v_const $v31
 

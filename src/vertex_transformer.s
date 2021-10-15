@@ -57,94 +57,94 @@ transform_vtx_handler:
 /* [518] */ vmudh $v9, $v9, $v29
 
 @@b:
-/* [51c] */ vmudn v_vtx_output_1_and_2_frac, v_matrix0_f, v_vtx_input_1_and_2[0h]
-/* [520] */ vmadh v_vtx_output_1_and_2_frac, v_matrix0_i, v_vtx_input_1_and_2[0h]
-/* [524] */ vmadn v_vtx_output_1_and_2_frac, v_matrix1_f, v_vtx_input_1_and_2[1h]
-/* [528] */ vmadh v_vtx_output_1_and_2_frac, v_matrix1_i, v_vtx_input_1_and_2[1h]
-/* [52c] */ vmadn v_vtx_output_1_and_2_frac, v_matrix2_f, v_vtx_input_1_and_2[2h]
-/* [530] */ vmadh v_vtx_output_1_and_2_frac, v_matrix2_i, v_vtx_input_1_and_2[2h]
-/* [534] */ vmadn v_vtx_output_1_and_2_frac, v_matrix3_f, v_const[1]
-/* [538] */ vmadh v_vtx_output_1_and_2_int, v_matrix3_i, v_const[1]
-/* [53c] */ vmudn v_vtx_output_3_and_4_frac, v_matrix0_f, v_vtx_input_3_and_4[0h]
-/* [540] */ vmadh v_vtx_output_3_and_4_frac, v_matrix0_i, v_vtx_input_3_and_4[0h]
-/* [544] */ vmadn v_vtx_output_3_and_4_frac, v_matrix1_f, v_vtx_input_3_and_4[1h]
-/* [548] */ vmadh v_vtx_output_3_and_4_frac, v_matrix1_i, v_vtx_input_3_and_4[1h]
-/* [54c] */ vmadn v_vtx_output_3_and_4_frac, v_matrix2_f, v_vtx_input_3_and_4[2h]
-/* [550] */ vmadh v_vtx_output_3_and_4_frac, v_matrix2_i, v_vtx_input_3_and_4[2h]
-/* [554] */ vmadn v_vtx_output_3_and_4_frac, v_matrix3_f, v_const[1]
-/* [558] */ vmadh v_vtx_output_3_and_4_int, v_matrix3_i, v_const[1]
+/* [51c] */ vmudn v_vtx_output_1_and_2_f, v_matrix0_f, v_vtx_input_1_and_2[0h]
+/* [520] */ vmadh v_vtx_output_1_and_2_f, v_matrix0_i, v_vtx_input_1_and_2[0h]
+/* [524] */ vmadn v_vtx_output_1_and_2_f, v_matrix1_f, v_vtx_input_1_and_2[1h]
+/* [528] */ vmadh v_vtx_output_1_and_2_f, v_matrix1_i, v_vtx_input_1_and_2[1h]
+/* [52c] */ vmadn v_vtx_output_1_and_2_f, v_matrix2_f, v_vtx_input_1_and_2[2h]
+/* [530] */ vmadh v_vtx_output_1_and_2_f, v_matrix2_i, v_vtx_input_1_and_2[2h]
+/* [534] */ vmadn v_vtx_output_1_and_2_f, v_matrix3_f, v_const[1]
+/* [538] */ vmadh v_vtx_output_1_and_2_i, v_matrix3_i, v_const[1]
+/* [53c] */ vmudn v_vtx_output_3_and_4_f, v_matrix0_f, v_vtx_input_3_and_4[0h]
+/* [540] */ vmadh v_vtx_output_3_and_4_f, v_matrix0_i, v_vtx_input_3_and_4[0h]
+/* [544] */ vmadn v_vtx_output_3_and_4_f, v_matrix1_f, v_vtx_input_3_and_4[1h]
+/* [548] */ vmadh v_vtx_output_3_and_4_f, v_matrix1_i, v_vtx_input_3_and_4[1h]
+/* [54c] */ vmadn v_vtx_output_3_and_4_f, v_matrix2_f, v_vtx_input_3_and_4[2h]
+/* [550] */ vmadh v_vtx_output_3_and_4_f, v_matrix2_i, v_vtx_input_3_and_4[2h]
+/* [554] */ vmadn v_vtx_output_3_and_4_f, v_matrix3_f, v_const[1]
+/* [558] */ vmadh v_vtx_output_3_and_4_i, v_matrix3_i, v_const[1]
 /* [55c] */ addi vtxPtr, 0x40
-/* [560] */ vmudl v_persp_correct_1_and_2_frac, v_vtx_output_1_and_2_frac, v_w_scale[0]
-/* [564] */ vmadm v_persp_correct_1_and_2_int, v_vtx_output_1_and_2_int, v_w_scale[0]
-/* [568] */ vmadn v_persp_correct_1_and_2_frac, v_const, v_const[0]
-/* [56c] */ vmudl v_persp_correct_3_and_4_frac, v_vtx_output_3_and_4_frac, v_w_scale[0]
-/* [570] */ vmadm v_persp_correct_3_and_4_int, v_vtx_output_3_and_4_int, v_w_scale[0]
-/* [574] */ vmadn v_persp_correct_3_and_4_frac, v_const, v_const[0]
-/* [578] */ vrcph v_w_reciprocal_1_and_2_int[3], v_persp_correct_1_and_2_int[3]
-/* [57c] */ vrcpl v_w_reciprocal_1_and_2_frac[3], v_persp_correct_1_and_2_frac[3]
-/* [580] */ vrcph v_w_reciprocal_1_and_2_int[3], v_persp_correct_1_and_2_int[7]
-/* [584] */ vrcpl v_w_reciprocal_1_and_2_frac[7], v_persp_correct_1_and_2_frac[7]
-/* [588] */ vrcph v_w_reciprocal_1_and_2_int[7], v_const[0]
-/* [58c] */ vrcph v_w_reciprocal_3_and_4_int[3], v_persp_correct_3_and_4_int[3]
-/* [590] */ vrcpl v_w_reciprocal_3_and_4_frac[3], v_persp_correct_3_and_4_frac[3]
-/* [594] */ vrcph v_w_reciprocal_3_and_4_int[3], v_persp_correct_3_and_4_int[7]
-/* [598] */ vrcpl v_w_reciprocal_3_and_4_frac[7], v_persp_correct_3_and_4_frac[7]
-/* [59c] */ vrcph v_w_reciprocal_3_and_4_int[7], v_const[0]
-/* [5a0] */ vmudn v_w_reciprocal_1_and_2_frac, v_w_reciprocal_1_and_2_frac, v_const[2]
-/* [5a4] */ vmadh v_w_reciprocal_1_and_2_int, v_w_reciprocal_1_and_2_int, v_const[2]
-/* [5a8] */ vmadn v_w_reciprocal_1_and_2_frac, v_const, v_const[0]
-/* [5ac] */ vmudn v_w_reciprocal_3_and_4_frac, v_w_reciprocal_3_and_4_frac, v_const[2]
-/* [5b0] */ vmadh v_w_reciprocal_3_and_4_int, v_w_reciprocal_3_and_4_int, v_const[2]
-/* [5b4] */ vmadn v_w_reciprocal_3_and_4_frac, v_const, v_const[0]
-/* [5b8] */ vmudl v_persp_correct_1_and_2_frac, v_vtx_output_1_and_2_frac, v_w_reciprocal_1_and_2_frac[3h]
-/* [5bc] */ vmadm v_persp_correct_1_and_2_frac, v_vtx_output_1_and_2_int, v_w_reciprocal_1_and_2_frac[3h]
-/* [5c0] */ vmadn v_persp_correct_1_and_2_frac, v_vtx_output_1_and_2_frac, v_w_reciprocal_1_and_2_int[3h]
-/* [5c4] */ vmadh v_persp_correct_1_and_2_int, v_vtx_output_1_and_2_int, v_w_reciprocal_1_and_2_int[3h]
-/* [5c8] */ vmudl v_persp_correct_3_and_4_frac, v_vtx_output_3_and_4_frac, v_w_reciprocal_3_and_4_frac[3h]
-/* [5cc] */ vmadm v_persp_correct_3_and_4_frac, v_vtx_output_3_and_4_int, v_w_reciprocal_3_and_4_frac[3h]
-/* [5d0] */ vmadn v_persp_correct_3_and_4_frac, v_vtx_output_3_and_4_frac, v_w_reciprocal_3_and_4_int[3h]
-/* [5d4] */ vmadh v_persp_correct_3_and_4_int, v_vtx_output_3_and_4_int, v_w_reciprocal_3_and_4_int[3h]
-/* [5d8] */ vmudl v_persp_correct_1_and_2_frac, v_persp_correct_1_and_2_frac, v_w_scale[0]
-/* [5dc] */ ldv v_vtx_output_1_and_2_int[0], dmem_screenclamp_vec(r0)
-/* [5e0] */ vmadm v_persp_correct_1_and_2_int, v_persp_correct_1_and_2_int, v_w_scale[0]
-/* [5e4] */ ldv v_vtx_output_1_and_2_int[8], dmem_screenclamp_vec(r0)
-/* [5e8] */ vmadn v_persp_correct_1_and_2_frac, v_const, v_const[0]
-/* [5ec] */ vmudl v_persp_correct_3_and_4_frac, v_persp_correct_3_and_4_frac, v_w_scale[0]
-/* [5f0] */ vmadm v_persp_correct_3_and_4_int, v_persp_correct_3_and_4_int, v_w_scale[0]
-/* [5f4] */ vmadn v_persp_correct_3_and_4_frac, v_const, v_const[0]
-/* [5f8] */ vmudh v_screen_space_vtx_1_and_2_frac, v_viewport_translation, v_const[1]
-/* [5fc] */ vmadn v_screen_space_vtx_1_and_2_frac, v_persp_correct_1_and_2_frac, $v9
+/* [560] */ vmudl v_persp_correct_1_and_2_f, v_vtx_output_1_and_2_f, v_w_scale[0]
+/* [564] */ vmadm v_persp_correct_1_and_2_i, v_vtx_output_1_and_2_i, v_w_scale[0]
+/* [568] */ vmadn v_persp_correct_1_and_2_f, v_const, v_const[0]
+/* [56c] */ vmudl v_persp_correct_3_and_4_f, v_vtx_output_3_and_4_f, v_w_scale[0]
+/* [570] */ vmadm v_persp_correct_3_and_4_i, v_vtx_output_3_and_4_i, v_w_scale[0]
+/* [574] */ vmadn v_persp_correct_3_and_4_f, v_const, v_const[0]
+/* [578] */ vrcph v_w_reciprocal_1_and_2_i[3], v_persp_correct_1_and_2_i[3]
+/* [57c] */ vrcpl v_w_reciprocal_1_and_2_f[3], v_persp_correct_1_and_2_f[3]
+/* [580] */ vrcph v_w_reciprocal_1_and_2_i[3], v_persp_correct_1_and_2_i[7]
+/* [584] */ vrcpl v_w_reciprocal_1_and_2_f[7], v_persp_correct_1_and_2_f[7]
+/* [588] */ vrcph v_w_reciprocal_1_and_2_i[7], v_const[0]
+/* [58c] */ vrcph v_w_reciprocal_3_and_4_i[3], v_persp_correct_3_and_4_i[3]
+/* [590] */ vrcpl v_w_reciprocal_3_and_4_f[3], v_persp_correct_3_and_4_f[3]
+/* [594] */ vrcph v_w_reciprocal_3_and_4_i[3], v_persp_correct_3_and_4_i[7]
+/* [598] */ vrcpl v_w_reciprocal_3_and_4_f[7], v_persp_correct_3_and_4_f[7]
+/* [59c] */ vrcph v_w_reciprocal_3_and_4_i[7], v_const[0]
+/* [5a0] */ vmudn v_w_reciprocal_1_and_2_f, v_w_reciprocal_1_and_2_f, v_const[2]
+/* [5a4] */ vmadh v_w_reciprocal_1_and_2_i, v_w_reciprocal_1_and_2_i, v_const[2]
+/* [5a8] */ vmadn v_w_reciprocal_1_and_2_f, v_const, v_const[0]
+/* [5ac] */ vmudn v_w_reciprocal_3_and_4_f, v_w_reciprocal_3_and_4_f, v_const[2]
+/* [5b0] */ vmadh v_w_reciprocal_3_and_4_i, v_w_reciprocal_3_and_4_i, v_const[2]
+/* [5b4] */ vmadn v_w_reciprocal_3_and_4_f, v_const, v_const[0]
+/* [5b8] */ vmudl v_persp_correct_1_and_2_f, v_vtx_output_1_and_2_f, v_w_reciprocal_1_and_2_f[3h]
+/* [5bc] */ vmadm v_persp_correct_1_and_2_f, v_vtx_output_1_and_2_i, v_w_reciprocal_1_and_2_f[3h]
+/* [5c0] */ vmadn v_persp_correct_1_and_2_f, v_vtx_output_1_and_2_f, v_w_reciprocal_1_and_2_i[3h]
+/* [5c4] */ vmadh v_persp_correct_1_and_2_i, v_vtx_output_1_and_2_i, v_w_reciprocal_1_and_2_i[3h]
+/* [5c8] */ vmudl v_persp_correct_3_and_4_f, v_vtx_output_3_and_4_f, v_w_reciprocal_3_and_4_f[3h]
+/* [5cc] */ vmadm v_persp_correct_3_and_4_f, v_vtx_output_3_and_4_i, v_w_reciprocal_3_and_4_f[3h]
+/* [5d0] */ vmadn v_persp_correct_3_and_4_f, v_vtx_output_3_and_4_f, v_w_reciprocal_3_and_4_i[3h]
+/* [5d4] */ vmadh v_persp_correct_3_and_4_i, v_vtx_output_3_and_4_i, v_w_reciprocal_3_and_4_i[3h]
+/* [5d8] */ vmudl v_persp_correct_1_and_2_f, v_persp_correct_1_and_2_f, v_w_scale[0]
+/* [5dc] */ ldv v_vtx_output_1_and_2_i[0], dmem_screenclamp_vec(r0)
+/* [5e0] */ vmadm v_persp_correct_1_and_2_i, v_persp_correct_1_and_2_i, v_w_scale[0]
+/* [5e4] */ ldv v_vtx_output_1_and_2_i[8], dmem_screenclamp_vec(r0)
+/* [5e8] */ vmadn v_persp_correct_1_and_2_f, v_const, v_const[0]
+/* [5ec] */ vmudl v_persp_correct_3_and_4_f, v_persp_correct_3_and_4_f, v_w_scale[0]
+/* [5f0] */ vmadm v_persp_correct_3_and_4_i, v_persp_correct_3_and_4_i, v_w_scale[0]
+/* [5f4] */ vmadn v_persp_correct_3_and_4_f, v_const, v_const[0]
+/* [5f8] */ vmudh v_screen_space_vtx_1_and_2_f, v_viewport_translation, v_const[1]
+/* [5fc] */ vmadn v_screen_space_vtx_1_and_2_f, v_persp_correct_1_and_2_f, $v9
 /* [600] */ ldv v_vtx_input_1_and_2[0], 0x0(r22)
-/* [604] */ vmadh v_screen_space_vtx_1_and_2_int, v_persp_correct_1_and_2_int, $v9
+/* [604] */ vmadh v_screen_space_vtx_1_and_2_i, v_persp_correct_1_and_2_i, $v9
 /* [608] */ ldv v_vtx_input_1_and_2[8], 0x10(r22)
-/* [60c] */ vmadn v_screen_space_vtx_1_and_2_frac, v_const, v_const[0]
-/* [610] */ vmudh v_screen_space_vtx_3_and_4_frac, v_viewport_translation, v_const[1]
-/* [614] */ vmadn v_screen_space_vtx_3_and_4_frac, v_persp_correct_3_and_4_frac, $v9
+/* [60c] */ vmadn v_screen_space_vtx_1_and_2_f, v_const, v_const[0]
+/* [610] */ vmudh v_screen_space_vtx_3_and_4_f, v_viewport_translation, v_const[1]
+/* [614] */ vmadn v_screen_space_vtx_3_and_4_f, v_persp_correct_3_and_4_f, $v9
 /* [618] */ ldv v_vtx_input_3_and_4[0], 0x20(r22)
-/* [61c] */ vmadh v_screen_space_vtx_3_and_4_int, v_persp_correct_3_and_4_int, $v9
+/* [61c] */ vmadh v_screen_space_vtx_3_and_4_i, v_persp_correct_3_and_4_i, $v9
 /* [620] */ ldv v_vtx_input_3_and_4[8], 0x30(r22)
-/* [624] */ vmadn v_screen_space_vtx_3_and_4_frac, v_const, v_const[0]
-/* [628] */ vlt v_screen_space_vtx_1_and_2_int, v_screen_space_vtx_1_and_2_int, v_vtx_output_1_and_2_int[0q]
+/* [624] */ vmadn v_screen_space_vtx_3_and_4_f, v_const, v_const[0]
+/* [628] */ vlt v_screen_space_vtx_1_and_2_i, v_screen_space_vtx_1_and_2_i, v_vtx_output_1_and_2_i[0q]
 /* [62c] */ addi numVerticesLeft, -1
-/* [630] */ vlt v_screen_space_vtx_3_and_4_int, v_screen_space_vtx_3_and_4_int, v_vtx_output_1_and_2_int[0q]
-/* [634] */ vadd v_screen_space_vtx_1_and_2_int, v_screen_space_vtx_1_and_2_int, v_const[2]
-/* [638] */ vadd v_screen_space_vtx_3_and_4_int, v_screen_space_vtx_3_and_4_int, v_const[2]
-/* [63c] */ vand v_screen_space_vtx_1_and_2_int, v_screen_space_vtx_1_and_2_int, v_const[6]
-/* [640] */ vand v_screen_space_vtx_3_and_4_int, v_screen_space_vtx_3_and_4_int, v_const[6]
-/* [644] */ sdv v_screen_space_vtx_1_and_2_int[0], (vtx_xyz)(transformedVtxPtr)
-/* [648] */ ssv v_screen_space_vtx_1_and_2_frac[4], (vtx_flag)(transformedVtxPtr)
+/* [630] */ vlt v_screen_space_vtx_3_and_4_i, v_screen_space_vtx_3_and_4_i, v_vtx_output_1_and_2_i[0q]
+/* [634] */ vadd v_screen_space_vtx_1_and_2_i, v_screen_space_vtx_1_and_2_i, v_const[2]
+/* [638] */ vadd v_screen_space_vtx_3_and_4_i, v_screen_space_vtx_3_and_4_i, v_const[2]
+/* [63c] */ vand v_screen_space_vtx_1_and_2_i, v_screen_space_vtx_1_and_2_i, v_const[6]
+/* [640] */ vand v_screen_space_vtx_3_and_4_i, v_screen_space_vtx_3_and_4_i, v_const[6]
+/* [644] */ sdv v_screen_space_vtx_1_and_2_i[0], (vtx_xyz)(transformedVtxPtr)
+/* [648] */ ssv v_screen_space_vtx_1_and_2_f[4], (vtx_flag)(transformedVtxPtr)
 /* [64c] */ blez numVerticesLeft, @@f
 /* [650] */  addi numVerticesLeft, numVerticesLeft, -1
-/* [654] */ sdv v_screen_space_vtx_1_and_2_int[8], (0x10 + vtx_xyz)(transformedVtxPtr)
-/* [658] */ ssv v_screen_space_vtx_1_and_2_frac[12], (0x10 + vtx_flag)(transformedVtxPtr)
+/* [654] */ sdv v_screen_space_vtx_1_and_2_i[8], (0x10 + vtx_xyz)(transformedVtxPtr)
+/* [658] */ ssv v_screen_space_vtx_1_and_2_f[12], (0x10 + vtx_flag)(transformedVtxPtr)
 /* [65c] */ blez numVerticesLeft, @@f
 /* [660] */  addi numVerticesLeft, numVerticesLeft, -1
-/* [664] */ sdv v_screen_space_vtx_3_and_4_int[0], (0x20 + vtx_xyz)(transformedVtxPtr)
-/* [668] */ ssv v_screen_space_vtx_3_and_4_frac[4], (0x20 + vtx_flag)(transformedVtxPtr)
+/* [664] */ sdv v_screen_space_vtx_3_and_4_i[0], (0x20 + vtx_xyz)(transformedVtxPtr)
+/* [668] */ ssv v_screen_space_vtx_3_and_4_f[4], (0x20 + vtx_flag)(transformedVtxPtr)
 /* [66c] */ blez numVerticesLeft, @@f
 /* [670] */  addi numVerticesLeft, numVerticesLeft, -1
-/* [674] */ sdv v_screen_space_vtx_3_and_4_int[8], (0x30 + vtx_xyz)(transformedVtxPtr)
-/* [678] */ ssv v_screen_space_vtx_3_and_4_frac[12], (0x30 + vtx_flag)(transformedVtxPtr)
+/* [674] */ sdv v_screen_space_vtx_3_and_4_i[8], (0x30 + vtx_xyz)(transformedVtxPtr)
+/* [678] */ ssv v_screen_space_vtx_3_and_4_f[12], (0x30 + vtx_flag)(transformedVtxPtr)
 /* [67c] */ bgtz numVerticesLeft, @@b
 /* [680] */  addi transformedVtxPtr, 0x40
 
