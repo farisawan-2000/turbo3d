@@ -1,4 +1,5 @@
 #include <PR/rcp.h>
+#include <PR/gbi.h>
 #include <PR/gt.h>
 
 .rsp
@@ -127,9 +128,6 @@ DMA_LEN equ r18
 DMA_SRC equ r19
 DMA_DEST equ r20
 
-GT_SHADING_SMOOTH equ 0x200
-GT_CULL_BACK equ 0x2000
-
 vtx_xyz equ 0
 vtx_flag equ 0x6
 
@@ -169,6 +167,9 @@ vtx_flag equ 0x6
 #define v_w_reciprocal_3_and_4_frac $v26
 #define v_screen_space_vtx_3_and_4_int $v27
 #define v_screen_space_vtx_3_and_4_frac $v28
+
+#define v_const $v31
+
 
 #define DMEM(addr) addr(r0)
 #define DMEM_PTR(addr) r0, addr
@@ -410,4 +411,5 @@ setup_rdp:
 
 .endarea
 .close
+
 

@@ -11,7 +11,7 @@ triangle_draw_handler:
 /* [6ec] */ add r2, r2, r1
 /* [6f0] */ lw r11, dmem_gtStateL_renderState(rsp_state)
 
-@bigman_loop:
+@draw_next_triangle:
 /* [6f4] */ beq r1, r2, @lab_040017b0
 /* [6f8] */ lb r4, 0x0(r1)
 /* [6fc] */ lb r5, 0x1(r1)
@@ -27,24 +27,24 @@ triangle_draw_handler:
 @lab_040017a4:
 /* [724] */ nop
 /* [728] */ j @lab_040017e8
-/* [72c] */ addi r1, r1, 0x4
+/* [72c] */  addi r1, r1, 0x4
 @lab_040017b0:
 /* [730] */ lui r1, 0xe700
 /* [734] */ sw r1, 0x0(r23)
 /* [738] */ sw r0, 0x4(r23)
 /* [73c] */ jal setup_rdp
-/* [740] */ addi r23, r23, 0x8
+/* [740] */  addi r23, r23, 0x8
 @noTris:
 /* [744] */ lw ra, 0x70(r0)
 /* [748] */ jr ra
 @lab_040017cc:
-/* [74c] */ lb r7, 0x3(r1)
+/* [74c] */  lb r7, 0x3(r1)
 /* [750] */ sll r7, r7, 2
 /* [754] */ sw r4, 0xbb0(r0)
 /* [758] */ sw r5, 0xbb4(r0)
 /* [75c] */ sw r6, 0xbb8(r0)
 /* [760] */ j @lab_040017a4
-/* [764] */ lw r7, 0xbb0(r7)
+/* [764] */  lw r7, 0xbb0(r7)
 @lab_040017e8:
 // TODO: put rejection here
 /* [768] */ llv $v9[0], 0x0(r4)
@@ -68,7 +68,7 @@ triangle_draw_handler:
 @@b:
 /* [7b0] */ slt r10, r13, r12
 /* [7b4] */ blez r10, @@f
-/* [7b8] */ add r10, r13, r0
+/* [7b8] */  add r10, r13, r0
 /* [7bc] */ add r13, r12, r0
 /* [7c0] */ add r12, r10, r0
 /* [7c4] */ addu r10, r5, r0
@@ -81,14 +81,14 @@ triangle_draw_handler:
 /* [7dc] */ slt r10, r14, r13
 /* [7e0] */ vadd $v29, $v13, $v15
 /* [7e4] */ blez r10, @@f2
-/* [7e8] */ add r10, r14, r0
+/* [7e8] */  add r10, r14, r0
 /* [7ec] */ add r14, r13, r0
 /* [7f0] */ add r13, r10, r0
 /* [7f4] */ addu r10, r6, r0
 /* [7f8] */ addu r6, r5, r0
 /* [7fc] */ addu r5, r10, r0
 /* [800] */ j @@b
-/* [804] */ xori r18, r18, 0x1
+/* [804] */  xori r18, r18, 0x1
 @@f2:
 /* [808] */ vlt $v27, $v29, $v31[0]
 /* [80c] */ llv $v11[0], 0x0(r6)
@@ -96,7 +96,7 @@ triangle_draw_handler:
 /* [814] */ llv $v10[0], 0x0(r5)
 /* [818] */ llv $v9[0], 0x0(r4)
 /* [81c] */ blez r18, @@f3
-/* [820] */ vsub v_matrix0_i, $v11, $v10
+/* [820] */  vsub v_matrix0_i, $v11, $v10
 /* [824] */ vmudn $v28, $v28, $v31[3]
 /* [828] */ vmadh $v29, $v29, $v31[3]
 /* [82c] */ vmadn $v28, $v31, $v31[0]
@@ -114,7 +114,7 @@ triangle_draw_handler:
 /* [858] */ luv $v18[0], 0x8(r10)
 /* [85c] */ andi r10, r11, GT_SHADING_SMOOTH
 /* [860] */ bgtz r10, @@f4 ; no need to load normals if shade_smooth is off
-/* [864] */ addi r10, r7, 0x4 ; did they have to do this?
+/* [864] */  addi r10, r7, 0x4 ; did they have to do this?
 /* [868] */ luv $v17[0], 0x8(r10)
 /* [86c] */ luv $v19[0], 0x8(r10)
 /* [870] */ luv $v18[0], 0x8(r10)
@@ -178,7 +178,7 @@ triangle_draw_handler:
 /* [950] */ vrcp $v28[1], v_matrix0_i[1]
 /* [954] */ lb r10, 0x97(rsp_state)
 /* [958] */ vrcph $v29[1], $v31[0]
-/* [95c] */ ori r8, r8, 0xcc
+/* [95c] */ ori r8, r8, G_TRI_SHADE
 /* [960] */ vrcp $v28[3], v_matrix0_i[3]
 /* [964] */ vrcph $v29[3], $v31[0]
 /* [968] */ vrcp $v28[5], v_matrix0_i[5]
@@ -280,6 +280,6 @@ triangle_draw_handler:
 @@f7:
 /* [ae4] */ jal setup_rdp
 @@f8:
-/* [ae8] */ nop
-/* [aec] */ j @bigman_loop
-/* [af0] */ nop
+/* [ae8] */  nop
+/* [aec] */ j @draw_next_triangle
+/* [af0] */  nop
