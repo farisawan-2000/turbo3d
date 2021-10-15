@@ -46,7 +46,16 @@ triangle_draw_handler:
 /* [760] */ j @lab_040017a4
 /* [764] */  lw r7, 0xbb0(r7)
 @lab_040017e8:
+#ifdef NON_MATCHING
 // TODO: put rejection here
+lw t0, 0(r4)
+beqz t0, @draw_next_triangle
+ lw t1, 0(r5)
+beqz t1, @draw_next_triangle
+ lw t0, 0(r6)
+beqz t0, @draw_next_triangle
+ nop
+#endif
 /* [768] */ llv $v9[0], 0x0(r4)
 /* [76c] */ llv $v10[0], 0x0(r5)
 /* [770] */ llv $v11[0], 0x0(r6)
