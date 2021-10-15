@@ -133,21 +133,48 @@ transform_vtx_handler:
 /* [640] */ vand v_screen_vtx_3_and_4_i, v_screen_vtx_3_and_4_i, v_const[6]
 /* [644] */ sdv v_screen_vtx_1_and_2_i[0], (vtx_xyz)(transformedVtxPtr)
 /* [648] */ ssv v_screen_vtx_1_and_2_f[4], (vtx_flag)(transformedVtxPtr)
+#ifdef NON_MATCHING
+    lh t0, (0)(transformedVtxPtr)
+    jal vtx_checker
+     lh t1, (2)(transformedVtxPtr)
+#endif
 /* [64c] */ blez numVerticesLeft, @@f
+@@vtx0_offscreen:
 /* [650] */  addi numVerticesLeft, numVerticesLeft, -1
 /* [654] */ sdv v_screen_vtx_1_and_2_i[8], (0x10 + vtx_xyz)(transformedVtxPtr)
 /* [658] */ ssv v_screen_vtx_1_and_2_f[12], (0x10 + vtx_flag)(transformedVtxPtr)
+#ifdef NON_MATCHING
+    lh t0, (0x10)(transformedVtxPtr)
+    jal vtx_checker
+     lh t1, (0x12)(transformedVtxPtr)
+#endif
 /* [65c] */ blez numVerticesLeft, @@f
+@@vtx1_offscreen:
 /* [660] */  addi numVerticesLeft, numVerticesLeft, -1
 /* [664] */ sdv v_screen_vtx_3_and_4_i[0], (0x20 + vtx_xyz)(transformedVtxPtr)
 /* [668] */ ssv v_screen_vtx_3_and_4_f[4], (0x20 + vtx_flag)(transformedVtxPtr)
+#ifdef NON_MATCHING
+    lh t0, (0x20)(transformedVtxPtr)
+    jal vtx_checker
+     lh t1, (0x22)(transformedVtxPtr)
+#endif
 /* [66c] */ blez numVerticesLeft, @@f
+@@vtx2_offscreen:
 /* [670] */  addi numVerticesLeft, numVerticesLeft, -1
 /* [674] */ sdv v_screen_vtx_3_and_4_i[8], (0x30 + vtx_xyz)(transformedVtxPtr)
 /* [678] */ ssv v_screen_vtx_3_and_4_f[12], (0x30 + vtx_flag)(transformedVtxPtr)
+#ifdef NON_MATCHING
+    lh t0, (0x30)(transformedVtxPtr)
+    jal vtx_checker
+     lh t1, (0x32)(transformedVtxPtr)
+#endif
 /* [67c] */ bgtz numVerticesLeft, @@b
+@@vtx3_offscreen:
 /* [680] */  addi transformedVtxPtr, 0x40
-
+#ifdef NON_MATCHING
+    b @@f
+     nop
+#endif
 @@f:
 /* [684] */ lb r5, dmem_gtStateL_flag(rsp_state)
 /* [688] */ lb r1, dmem_gtStateL_vtxCount(rsp_state)
@@ -169,3 +196,25 @@ transform_vtx_handler:
 /* [6c0] */ lw ra, DMEM(dmem_returnaddr)
 /* [6c4] */ jr ra
 /* [6c8] */  nop
+
+
+#ifdef NON_MATCHING
+vtx_checker:
+blt t0, 0, @@failed
+ nop
+blt t1, 0, @@failed
+ nop
+bgt t0, 320, @@failed
+ nop
+bgt t1, 240, @@failed
+ nop
+@@failed:
+jr ra
+ nop
+jr ra
+ sw r0, (transformedVtxPtr)
+
+#endif
+
+
+
