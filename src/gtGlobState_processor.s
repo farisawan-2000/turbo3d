@@ -2,8 +2,8 @@
 gtGlobStateProcessor:
 /* [344] */ add r5, r0, ra
 /* [348] */ lw r19, 0xd8(r0)
-/* [34c] */ ldv v_matrix0_i[0], 0x30(rsp_state)
-/* [350] */ sdv v_matrix0_i[0], 0x0(r23)
+/* [34c] */ ldv v_mtx0_i[0], 0x30(rsp_state)
+/* [350] */ sdv v_mtx0_i[0], 0x0(r23)
 /* [354] */ addi r23, r23, 0x8
 /* [358] */ beqz r19, @lab_04001490
 /* [35c] */ nop
@@ -78,8 +78,8 @@ dma_transform_mtx:
 /* [44c] */ jal wait_for_dma_finish
 /* [450] */ nop
 @@skipMtx:
-/* [454] */ ldv v_matrix0_i[0], dmem_gtStateL_rdpOtherMode(rsp_state)
-/* [458] */ sdv v_matrix0_i[0], 0x0(r23)
+/* [454] */ ldv v_mtx0_i[0], dmem_gtStateL_rdpOtherMode(rsp_state)
+/* [458] */ sdv v_mtx0_i[0], 0x0(r23)
 /* [45c] */ addi r23, r23, 0x8
 /* [460] */ lw r19, dmem_gtStateL_rdpCmds(rsp_state)
 /* [464] */ beqz r19, @lab_04001490

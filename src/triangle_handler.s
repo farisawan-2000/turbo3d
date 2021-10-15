@@ -96,7 +96,7 @@ triangle_draw_handler:
 /* [814] */ llv $v10[0], 0x0(r5)
 /* [818] */ llv $v9[0], 0x0(r4)
 /* [81c] */ blez r18, @@f3
-/* [820] */  vsub v_matrix0_i, $v11, $v10
+/* [820] */  vsub v_mtx0_i, $v11, $v10
 /* [824] */ vmudn $v28, $v28, $v31[3]
 /* [828] */ vmadh $v29, $v29, $v31[3]
 /* [82c] */ vmadn $v28, $v31, $v31[0]
@@ -123,7 +123,7 @@ triangle_draw_handler:
 /* [878] */ vmov $v29[3], $v29[0]
 /* [87c] */ and r15, r15, r17
 /* [880] */ vmov $v28[3], $v28[0]
-/* [884] */ vmov v_matrix0_i[2], $v6[0]
+/* [884] */ vmov v_mtx0_i[2], $v6[0]
 /* [888] */ beqz r16, @@f8
 /* [88c] */ vmudm $v17, $v17, $v31[7]
 /* [890] */ vmudm $v19, $v19, $v31[7]
@@ -131,11 +131,11 @@ triangle_draw_handler:
 /* [898] */ vmudm $v18, $v18, $v31[7]
 /* [89c] */ vlt $v27, $v29, $v31[0]
 /* [8a0] */ andi r12, r12, 0xfffc
-/* [8a4] */ vmov v_matrix0_i[3], $v6[1]
+/* [8a4] */ vmov v_mtx0_i[3], $v6[1]
 /* [8a8] */ andi r13, r13, 0xfffc
-/* [8ac] */ vmov v_matrix0_i[4], $v5[0]
+/* [8ac] */ vmov v_mtx0_i[4], $v5[0]
 /* [8b0] */ andi r14, r14, 0xfffc
-/* [8b4] */ vmov v_matrix0_i[5], $v5[1]
+/* [8b4] */ vmov v_mtx0_i[5], $v5[1]
 /* [8b8] */ mfc2 r10, $v27[0]
 /* [8bc] */ llv $v19[8], 0x8(r4)
 /* [8c0] */ vrcph $v27[3], $v29[3]
@@ -173,15 +173,15 @@ triangle_draw_handler:
 /* [940] */ lb r8, 0x93(rsp_state)
 /* [944] */ addi r9, r0, 0x0
 @@f5:
-/* [948] */ vmudm $v5, v_matrix0_i, $v31[4]
+/* [948] */ vmudm $v5, v_mtx0_i, $v31[4]
 /* [94c] */ vmadn $v6, $v31, $v31[0]
-/* [950] */ vrcp $v28[1], v_matrix0_i[1]
+/* [950] */ vrcp $v28[1], v_mtx0_i[1]
 /* [954] */ lb r10, 0x97(rsp_state)
 /* [958] */ vrcph $v29[1], $v31[0]
 /* [95c] */ ori r8, r8, G_TRI_SHADE
-/* [960] */ vrcp $v28[3], v_matrix0_i[3]
+/* [960] */ vrcp $v28[3], v_mtx0_i[3]
 /* [964] */ vrcph $v29[3], $v31[0]
-/* [968] */ vrcp $v28[5], v_matrix0_i[5]
+/* [968] */ vrcp $v28[5], v_mtx0_i[5]
 /* [96c] */ or r9, r9, r10
 /* [970] */ vrcph $v29[5], $v31[0]
 /* [974] */ vmudl $v28, $v28, $v30[2]
@@ -189,7 +189,7 @@ triangle_draw_handler:
 /* [97c] */ vmadm $v29, $v29, $v30[2]
 /* [980] */ sb r9, 0x1(r23)
 /* [984] */ vmadn $v28, $v31, $v31[0]
-/* [988] */ vmudh v_matrix0_i, v_matrix0_i, $v31[5]
+/* [988] */ vmudh v_mtx0_i, v_mtx0_i, $v31[5]
 /* [98c] */ lsv $v7[0], 0x0(r5)
 /* [990] */ vmudl $v2, $v28, $v6[0q]
 /* [994] */ lsv $v7[4], 0x0(r4)
@@ -211,9 +211,9 @@ triangle_draw_handler:
 /* [9d4] */ ssv $v2[6], 0x1e(r23)
 /* [9d8] */ vmadn $v24, $v31, $v31[0]
 /* [9dc] */ ssv $v7[0], 0x8(r23)
-/* [9e0] */ vmudh $v16, $v22, v_matrix0_i[3]
+/* [9e0] */ vmudh $v16, $v22, v_mtx0_i[3]
 /* [9e4] */ ssv $v8[0], 0xa(r23)
-/* [9e8] */ vmadh $v16, $v15, v_matrix0_i[5]
+/* [9e8] */ vmadh $v16, $v15, v_mtx0_i[5]
 /* [9ec] */ ssv $v1[2], 0xc(r23)
 /* [9f0] */ vsar $v22, $v22, $v22[0]
 /* [9f4] */ ssv $v1[10], 0x14(r23)
@@ -251,8 +251,8 @@ triangle_draw_handler:
 @@f6:
 /* [a74] */ andi r10, r8, 0x1
 /* [a78] */ blez r10, @@f7
-/* [a7c] */ vmudh $v16, $v21, v_matrix0_i[4]
-/* [a80] */ vmadh $v16, $v21, v_matrix0_i[2]
+/* [a7c] */ vmudh $v16, $v21, v_mtx0_i[4]
+/* [a80] */ vmadh $v16, $v21, v_mtx0_i[2]
 /* [a84] */ vsar $v21, $v21, $v21[0]
 /* [a88] */ vsar $v5, $v5, $v5[1]
 /* [a8c] */ vmudl $v16, $v5, $v26[3]

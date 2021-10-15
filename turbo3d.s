@@ -132,41 +132,53 @@ vtx_xyz equ 0
 vtx_flag equ 0x6
 
 ; vreg names
-#define v_matrix0_i $v0
-#define v_matrix0_f $v4
 
-#define v_matrix1_i $v1
-#define v_matrix1_f $v5
+/*
 
-#define v_matrix2_i $v2
-#define v_matrix2_f $v6
+    LEGEND
 
-#define v_matrix3_i $v3
-#define v_matrix3_f $v7
+    i: integer part
+    f: fraction part
+    mtx: matrix
+    invtx: vertex input (Vtx type from gbi.h)
+    outvtx: vertex output (4 shorts: x, y, z_i, z_f)
+*/
+
+#define v_mtx0_i $v0
+#define v_mtx0_f $v4
+
+#define v_mtx1_i $v1
+#define v_mtx1_f $v5
+
+#define v_mtx2_i $v2
+#define v_mtx2_f $v6
+
+#define v_mtx3_i $v3
+#define v_mtx3_f $v7
 
 #define v_w_scale $v8
 #define v_viewport_scale $v9
 #define v_viewport_translation $v10
 
-#define v_vtx_input_1_and_2 $v11
-#define v_vtx_output_1_and_2_i $v12
-#define v_vtx_output_1_and_2_f $v13
+#define v_invtx_1_and_2 $v11
+#define v_outvtx_1_and_2_i $v12
+#define v_outvtx_1_and_2_f $v13
 #define v_persp_correct_1_and_2_i $v14
 #define v_persp_correct_1_and_2_f $v15
 #define v_w_reciprocal_1_and_2_i $v16
 #define v_w_reciprocal_1_and_2_f $v17
-#define v_screen_space_vtx_1_and_2_i $v18
-#define v_screen_space_vtx_1_and_2_f $v19
+#define v_screen_vtx_1_and_2_i $v18
+#define v_screen_vtx_1_and_2_f $v19
 
-#define v_vtx_input_3_and_4 $v20
-#define v_vtx_output_3_and_4_i $v21
-#define v_vtx_output_3_and_4_f $v22
+#define v_invtx_3_and_4 $v20
+#define v_outvtx_3_and_4_i $v21
+#define v_outvtx_3_and_4_f $v22
 #define v_persp_correct_3_and_4_i $v23
 #define v_persp_correct_3_and_4_f $v24
 #define v_w_reciprocal_3_and_4_i $v25
 #define v_w_reciprocal_3_and_4_f $v26
-#define v_screen_space_vtx_3_and_4_i $v27
-#define v_screen_space_vtx_3_and_4_f $v28
+#define v_screen_vtx_3_and_4_i $v27
+#define v_screen_vtx_3_and_4_f $v28
 
 #define v_const $v31
 
