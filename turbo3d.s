@@ -165,8 +165,8 @@ vtx_flag equ 0x6
 #define v_outvtx_1_and_2_f $v13
 #define v_persp_correct_1_and_2_i $v14
 #define v_persp_correct_1_and_2_f $v15
-#define v_w_reciprocal_1_and_2_i $v16
-#define v_w_reciprocal_1_and_2_f $v17
+#define v_inv_w_1_and_2_i $v16
+#define v_inv_w_1_and_2_f $v17
 #define v_screen_vtx_1_and_2_i $v18
 #define v_screen_vtx_1_and_2_f $v19
 
@@ -175,8 +175,8 @@ vtx_flag equ 0x6
 #define v_outvtx_3_and_4_f $v22
 #define v_persp_correct_3_and_4_i $v23
 #define v_persp_correct_3_and_4_f $v24
-#define v_w_reciprocal_3_and_4_i $v25
-#define v_w_reciprocal_3_and_4_f $v26
+#define v_inv_w_3_and_4_i $v25
+#define v_inv_w_3_and_4_f $v26
 #define v_screen_vtx_3_and_4_i $v27
 #define v_screen_vtx_3_and_4_f $v28
 
