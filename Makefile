@@ -4,14 +4,18 @@ DUMMY != mkdir -p build
 
 NON_MATCHING := 0
 
+COMPARE := 1
+
 DEFINES := 
 ifeq ($(NON_MATCHING), 1)
 	DEFINES += -DNON_MATCHING
 endif
 
 all: build/t3d.bin
+ifeq ($(COMPARE), 1)
 	@sha1sum -c t3d.sha1
 	@sha1sum -c t3d.data.sha1
+endif
 
 tools/armips: tools/armips.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti -pipe $^ -o $@ -lpthread $(ARMIPS_FLAGS)
@@ -20,7 +24,7 @@ tools/armips: tools/armips.cpp
 build/t3d.bin: turbo3d.s tools/armips src/*.s
 	$(info $*.data.bin)
 	cpp -P $< -o build/$< -I/usr/include/n64 $(DEFINES)
-	tools/armips -strequ CODE_FILE $@ -strequ DATA_FILE build/t3d.data.bin -temp scratch_space/.t3d  build/$<
+	tools/armips -strequ CODE_FILE $@ -strequ DATA_FILE build/t3d.data.bin   build/$<
 	mips-linux-gnu-ld -r -b binary build/t3d.bin -o build/turbo3d_text.o
 	mips-linux-gnu-ld -r -b binary build/t3d.data.bin -o build/turbo3d_data.o
 

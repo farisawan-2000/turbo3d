@@ -1,4 +1,7 @@
 // start of gtsetup
+
+#define rdpCommand r8
+
 triangle_draw_handler:
 /* [6cc] */ lb r10, dmem_gtStateL_flag(rsp_state)
 /* [6d0] */ andi r10, r10, GT_FLAG_XFM_ONLY
@@ -179,7 +182,7 @@ beqz t0, @draw_next_triangle
 /* [934] */ vmadn $v26, $v26, $v25
 /* [938] */ vmadh $v27, $v27, $v25
 /* [93c] */ bltz r10, @@f5
-/* [940] */ lb r8, 0x93(rsp_state)
+/* [940] */ lb rdpCommand, 0x93(rsp_state)
 /* [944] */ addi r9, r0, 0x0
 @@f5:
 /* [948] */ vmudm $v5, v_mtx0_i, $v31[4]
@@ -187,14 +190,14 @@ beqz t0, @draw_next_triangle
 /* [950] */ vrcp $v28[1], v_mtx0_i[1]
 /* [954] */ lb r10, 0x97(rsp_state)
 /* [958] */ vrcph $v29[1], $v31[0]
-/* [95c] */ ori r8, r8, G_TRI_SHADE
+/* [95c] */ ori rdpCommand, rdpCommand, G_TRI_SHADE_TXTR_ZBUFF
 /* [960] */ vrcp $v28[3], v_mtx0_i[3]
 /* [964] */ vrcph $v29[3], $v31[0]
 /* [968] */ vrcp $v28[5], v_mtx0_i[5]
 /* [96c] */ or r9, r9, r10
 /* [970] */ vrcph $v29[5], $v31[0]
 /* [974] */ vmudl $v28, $v28, $v30[2]
-/* [978] */ sb r8, 0x0(r23)
+/* [978] */ sb rdpCommand, 0x0(r23)
 /* [97c] */ vmadm $v29, $v29, $v30[2]
 /* [980] */ sb r9, 0x1(r23)
 /* [984] */ vmadn $v28, $v31, $v31[0]
@@ -243,7 +246,7 @@ beqz t0, @draw_next_triangle
 /* [a30] */ sdv $v24[0], 0x30(r23)
 /* [a34] */ sdv $v19[0], 0x0(r23)
 /* [a38] */ sdv $v20[0], 0x10(r23)
-/* [a3c] */ andi r10, r8, 0x2
+/* [a3c] */ andi r10, rdpCommand, 0x2
 /* [a40] */ sdv $v22[0], 0x8(r23)
 /* [a44] */ sdv $v23[0], 0x18(r23)
 /* [a48] */ blez r10, @@f6
@@ -258,16 +261,10 @@ beqz t0, @draw_next_triangle
 /* [a6c] */ sdv $v24[8], 0x30(r23)
 /* [a70] */ addi r23, r23, 0x40
 @@f6:
-/* [a74] */ andi r10, r8, 0x1
+/* [a74] */ andi r10, rdpCommand, GT_ZBUFFER
 /* [a78] */ blez r10, @@f7
-/* [a7c] */ vmudh $v16, $v21, v_mtx0_i[4]
-/* [a80] */ vmadh $v16, $v21, v_mtx0_i[2]
-/* [a84] */ vsar $v21, $v21, $v21[0]
-/* [a88] */ vsar $v5, $v5, $v5[1]
-/* [a8c] */ vmudl $v16, $v5, $v26[3]
-/* [a90] */ vmadm $v16, $v21, $v26[3]
-/* [a94] */ vmadn $v5, $v5, $v27[3]
-/* [a98] */ vmadh $v21, $v21, $v27[3]
+nop
+
 /* [a9c] */ vmudn $v24, $v24, $v30[4]
 /* [aa0] */ vmadh $v25, $v25, $v30[4]
 /* [aa4] */ vmadn $v24, $v31, $v31[0]
