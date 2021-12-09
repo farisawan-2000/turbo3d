@@ -307,13 +307,13 @@ load_display_list:
 segmented_to_virtual:
 mask equ r11
 /* [204] */ lw mask, dmem_segment_mask(r0)
-/* [208] */ srl r12, r19, 22
+/* [208] */ srl r12, DMA_SRC, 22
 /* [20c] */ andi r12, r12, 0x3c
-/* [210] */ and r19, r19, mask
+/* [210] */ and DMA_SRC, DMA_SRC, mask
 /* [214] */ add r13, r0, r12
 /* [218] */ lw r12, 0x88(r13)
 /* [21c] */ jr ra
-/* [220] */ add r19, r19, r12
+/* [220] */ add DMA_SRC, DMA_SRC, r12
 
 ; args:
 ;  r17: 0 if read, 1 if write
